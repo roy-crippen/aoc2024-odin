@@ -8,7 +8,7 @@ import  d "../src/day_01/"
 @(test)
 test_example_part1 :: proc(t: ^testing.T) {
     p1_example := d.part1(example_str)
-    expected :u64 = 42
+    expected :int = 11
     testing.expect(t, p1_example == expected, fmt.tprintf("Expected age %d, got %d", expected, p1_example))
 }
 
