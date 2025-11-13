@@ -4,6 +4,7 @@ import "../lib"
 import "core:fmt"
 import "core:strings"
 import "core:sort"
+import sa "core:container/small_array"
 
 INPUT: string : #load("day_01.txt", string)
 
@@ -26,10 +27,9 @@ parse_uint_fast :: proc(s: string) -> int {
     return result
 }
 
-parse :: proc(s: string) -> ([1000]int, [1000]int, int) {
-    xs: [1000]int
-    ys: [1000]int
-    count := 0 // Renamed from len to avoid shadowing
+parse :: proc(s: string) -> (sa.Small_Array(1024, int), sa.Small_Array(1024, int)) {
+    xs: sa.Small_Array(1024, int)
+    ys: sa.Small_Array(1024, int)
     i := 0
 
     for i < len(s) {
@@ -42,28 +42,29 @@ parse :: proc(s: string) -> ([1000]int, [1000]int, int) {
             i += 1
         }
         x_str := s[x_start:i]
-        i += 3 // Skip exactly 3 spaces
+        i += 3 // skip 3 spaces
         y_start := i
         for i < len(s) && s[i] != '\n' {
             i += 1
         }
         y_str := s[y_start:i]
-        i += 1 // Skip newline
+        i += 1 // skip newline
 
-        xs[count] = parse_uint_fast(x_str)
-        ys[count] = parse_uint_fast(y_str)
-        count += 1
+        sa.push_back(&xs,parse_uint_fast(x_str) )
+        sa.push_back(&ys,parse_uint_fast(y_str) )
     }
-    return xs, ys, count
+    return xs, ys
 }
 
 part1 := proc(s: string) -> int {
-    xs, ys, count := parse(s)
-    sort.heap_sort(xs[:count])
-    sort.heap_sort(ys[:count])
+    sa_xs, sa_ys := parse(s)
+    xs := sa.slice(&sa_xs)
+    ys := sa.slice(&sa_ys)
+    sort.heap_sort(xs)
+    sort.heap_sort(ys)
 
     sum := 0
-    for i in 0..<count {
+    for i in 0..<len(xs) {
         diff := xs[i] - ys[i]
         sum += diff if diff >= 0 else -diff
     }
@@ -71,5 +72,14 @@ part1 := proc(s: string) -> int {
 }
 
 part2 := proc(s: string) -> int {
-    return 42
+    sa_xs, sa_ys := parse(s)
+    xs := sa.slice(&sa_xs)
+    ys := sa.slice(&sa_ys)
+    sum := 0
+    for x in xs {
+        for y in ys {
+            sum += x if x == y else 0
+        }
+    }
+    return sum
 }
