@@ -5,26 +5,17 @@ import "core:fmt"
 import "core:strings"
 import "core:sort"
 import sa "core:container/small_array"
+import "core:testing"
 
 INPUT: string : #load("day_01.txt", string)
 
-solution_01 := lib.Solution{
+solution := lib.Solution{
     day = 01,
     input = INPUT,
     part1 = part1,
     part2 = part2,
     expected_part1 = 2_086_478,
     expected_part2 = 24_941_624,
-}
-
-// fast integer parsing for non-negative integers
-@(private="file")
-parse_uint_fast :: proc(s: string) -> int {
-    result := 0
-    for c in s {
-        result = result * 10 + (int(c) - '0')
-    }
-    return result
 }
 
 parse :: proc(s: string) -> (sa.Small_Array(1024, int), sa.Small_Array(1024, int)) {
@@ -50,8 +41,8 @@ parse :: proc(s: string) -> (sa.Small_Array(1024, int), sa.Small_Array(1024, int
         y_str := s[y_start:i]
         i += 1 // skip newline
 
-        sa.push_back(&xs,parse_uint_fast(x_str) )
-        sa.push_back(&ys,parse_uint_fast(y_str) )
+        sa.push_back(&xs,lib.parse_uint_fast(x_str))
+        sa.push_back(&ys,lib.parse_uint_fast(y_str))
     }
     return xs, ys
 }
@@ -83,3 +74,43 @@ part2 := proc(s: string) -> int {
     }
     return sum
 }
+
+
+/*
+   tests -----------------------------
+*/
+
+@(test)
+test_example_part1 :: proc(t: ^testing.T) {
+    p1_example := part1(example_str)
+    expected :int = 11
+    testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
+}
+
+@(test)
+test_part1 :: proc(t: ^testing.T) {
+    p1 := part1(INPUT)
+    expected := solution.expected_part1
+    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
+}
+
+@(test)
+test_example_part2 :: proc(t: ^testing.T) {
+    p2_example := part2(example_str)
+    expected :int = 31
+    testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
+}
+
+@(test)
+test_part2 :: proc(t: ^testing.T) {
+    p2 := part2(INPUT)
+    expected := solution.expected_part2
+    testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
+}
+
+example_str := `3   4
+4   3
+2   5
+1   3
+3   9
+3   3`

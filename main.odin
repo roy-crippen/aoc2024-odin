@@ -2,9 +2,10 @@ package main
 
 import "core:fmt"
 import "core:os"
-import "src/lib"
 import "src/day_01"
+import "src/day_02"
 import "src/day_99"
+import "src/lib"
 import "core:time"
 
 main :: proc() {
@@ -13,8 +14,9 @@ main :: proc() {
     fmt.println(os.args[1:]) // the rest of the arguments
 
     sols := []lib.Solution{
-        day_01.solution_01,
-        day_99.solution_99
+        day_01.solution,
+        day_02.solution,
+        day_99.solution
     }
 
     tot_time := 0.0;

@@ -1,13 +1,13 @@
-package day_99
+package day_02
 
 import "../lib"
 import "core:testing"
 import "core:fmt"
 
-INPUT :: #load("day_99.txt", string)
+INPUT :: #load("day_02.txt", string)
 
 solution  := lib.Solution{
-    day = 99,
+    day = 02,
     input = INPUT,
     part1 = part1,
     part2 = part2,
