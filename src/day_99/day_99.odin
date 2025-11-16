@@ -15,11 +15,11 @@ solution  := lib.Solution{
     expected_part2 = 42,
 }
 
-part1 := proc(s:string) -> int {
+part1 :: proc(s:string) -> int {
     return 42
 }
 
-part2 := proc(s:string) -> int {
+part2 :: proc(s:string) -> int {
     return 42
 }
 

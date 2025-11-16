@@ -7,7 +7,7 @@ import "core:sort"
 import sa "core:container/small_array"
 import "core:testing"
 
-INPUT: string : #load("day_01.txt", string)
+INPUT :: #load("day_01.txt", string)
 
 solution := lib.Solution{
     day = 01,
@@ -47,7 +47,7 @@ parse :: proc(s: string) -> (sa.Small_Array(1024, int), sa.Small_Array(1024, int
     return xs, ys
 }
 
-part1 := proc(s: string) -> int {
+part1 :: proc(s: string) -> int {
     sa_xs, sa_ys := parse(s)
     xs := sa.slice(&sa_xs)
     ys := sa.slice(&sa_ys)
@@ -62,7 +62,7 @@ part1 := proc(s: string) -> int {
     return sum
 }
 
-part2 := proc(s: string) -> int {
+part2 :: proc(s: string) -> int {
     sa_xs, sa_ys := parse(s)
     xs := sa.slice(&sa_xs)
     ys := sa.slice(&sa_ys)
