@@ -82,22 +82,21 @@ solution := lib.Solution {
     expected_part2 = 439,
 }
 
-part1 :: proc(s: string) -> (cnt: int) {
+run :: proc(s: string, f: proc(_: string) -> bool) -> (cnt: int) {
     s_mut := s
     cnt = 0
     for line in strings.split_lines_iterator(&s_mut) {
-        cnt += 1 if is_safe_part1(line) else 0
+        cnt += 1 if f(line) else 0
     }
     return
 }
 
+part1 :: proc(s: string) -> (cnt: int) {
+    return run(s, is_safe_part1)
+}
+
 part2 :: proc(s: string) -> (cnt: int) {
-    s_mut := s
-    cnt = 0
-    for line in strings.split_lines_iterator(&s_mut) {
-        cnt += 1 if is_safe_part2(line) else 0
-    }
-    return
+    return run(s, is_safe_part2)
 }
 
 /*
