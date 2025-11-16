@@ -3,7 +3,6 @@ package day_02
 import "../lib"
 import sa "core:container/small_array"
 import "core:fmt"
-import "core:mem"
 import "core:slice"
 import "core:strings"
 import "core:testing"
