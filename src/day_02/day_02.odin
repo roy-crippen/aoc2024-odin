@@ -4,7 +4,7 @@ import "../lib"
 import sa "core:container/small_array"
 import "core:fmt"
 import "core:mem"
-import slice "core:slice"
+import "core:slice"
 import "core:strings"
 import "core:testing"
 
