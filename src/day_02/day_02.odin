@@ -20,8 +20,8 @@ is_safe_part1 :: proc(s: string) -> bool {
     prev_str, _ := strings.split_iterator(&s_mut, " ") // acts like a next() function
     curr_str, _ := strings.split_iterator(&s_mut, " ")
 
-    prev := lib.parse_uint_fast(prev_str)
-    curr := lib.parse_uint_fast(curr_str)
+    prev := lib.parse_string_to_int(prev_str)
+    curr := lib.parse_string_to_int(curr_str)
     asc := curr > prev
 
     if !is_pair_safe(prev, curr, asc) {
@@ -31,7 +31,7 @@ is_safe_part1 :: proc(s: string) -> bool {
     // process the rest
     for vs in strings.split_iterator(&s_mut, " ") {
         prev = curr
-        curr = lib.parse_uint_fast(vs)
+        curr = lib.parse_string_to_int(vs)
         if !is_pair_safe(prev, curr, asc) {
             return false
         }
@@ -61,7 +61,7 @@ is_safe_part2 :: proc(s: string) -> bool {
     s_mut := s
     sa_xs: sa.Small_Array(10, int)
     for str in strings.split_iterator(&s_mut, " ") {
-        sa.push_back(&sa_xs, lib.parse_uint_fast(str))
+        sa.push_back(&sa_xs, lib.parse_string_to_int(str))
     }
     xs := sa.slice(&sa_xs)
 
