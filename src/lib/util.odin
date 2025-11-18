@@ -7,37 +7,37 @@ import "core:testing"
 // ave 1,2,3,99 = approximately 1.500ms
 
 Solution :: struct {
-    day:            int,
-    input:          string,
-    part1:          proc(s: string) -> int,
-    part2:          proc(s: string) -> int,
-    expected_part1: int,
-    expected_part2: int,
+    day:            u8,
+    input:          []u8,
+    part1:          proc([]u8) -> u64,
+    part2:          proc([]u8) -> u64,
+    expected_part1: u64,
+    expected_part2: u64,
 }
 
-Solution_new :: struct {
-    day:            int,
-    input:          string,
-    part1:          proc(s: string) -> u64,
-    part2:          proc(s: string) -> u64,
-    expected_part1: int,
-    expected_part2: int,
+parse_uint_fast :: proc(s: string) -> (result: int) {
+    for c in s {result = result * 10 + (int(c) - '0')}
+    return
 }
 
-parse_uint_fast :: proc(s: string) -> int {
-    result := 0
-    for c in s {
-        result = result * 10 + (int(c) - '0')
-    }
-    return result
+parse_u32_fast :: proc(s: string) -> (result: u32) {
+    for c in s {result = result * 10 + (u32(c) - '0')}
+    return
 }
 
-parse_slice_u8_fast :: proc(s: []u8) -> int {
-    result := 0
-    for c in s {
-        result = result * 10 + (int(c) - '0')
-    }
-    return result
+parse_i32_fast :: #force_inline proc(s: string) -> (result: i32) {
+    for c in s {result = result * 10 + (i32(c) - '0')}
+    return
+}
+
+parse_slice_u8_fast :: proc(s: []u8) -> (result: int) {
+    for c in s {result = result * 10 + (int(c) - '0')}
+    return
+}
+
+parse_slice_u8_to_i32 :: proc(s: []u8) -> (result: i32) {
+    for c in s {result = result * 10 + (i32(c) - '0')}
+    return
 }
 
 /*

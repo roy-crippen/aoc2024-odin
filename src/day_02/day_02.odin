@@ -7,7 +7,7 @@ import "core:slice"
 import "core:strings"
 import "core:testing"
 
-INPUT :: #load("day_02.txt", string)
+INPUT :: #load("day_02.txt", []u8)
 
 is_pair_safe :: #force_inline proc(a: int, b: int, asc: bool) -> bool {
     diff := a - b
@@ -81,8 +81,8 @@ solution := lib.Solution {
     expected_part2 = 439,
 }
 
-run :: proc(s: string, f: proc(_: string) -> bool) -> (cnt: int) {
-    s_mut := s
+run :: proc(s: []u8, f: proc(_: string) -> bool) -> (cnt: u64) {
+    s_mut := string(s)
     cnt = 0
     for line in strings.split_lines_iterator(&s_mut) {
         cnt += 1 if f(line) else 0
@@ -90,11 +90,11 @@ run :: proc(s: string, f: proc(_: string) -> bool) -> (cnt: int) {
     return
 }
 
-part1 :: proc(s: string) -> (cnt: int) {
+part1 :: proc(s: []u8) -> (cnt: u64) {
     return run(s, is_safe_part1)
 }
 
-part2 :: proc(s: string) -> (cnt: int) {
+part2 :: proc(s: []u8) -> (cnt: u64) {
     return run(s, is_safe_part2)
 }
 
@@ -104,8 +104,8 @@ part2 :: proc(s: string) -> (cnt: int) {
 
 @(test)
 test_example_part1 :: proc(t: ^testing.T) {
-    p1_example := part1(example_str)
-    expected: int = 2
+    p1_example := part1(example_u8)
+    expected: u64 = 2
     testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
 }
 
@@ -118,8 +118,8 @@ test_part1 :: proc(t: ^testing.T) {
 
 @(test)
 test_example_part2 :: proc(t: ^testing.T) {
-    p2_example := part2(example_str)
-    expected: int = 4
+    p2_example := part2(example_u8)
+    expected: u64 = 4
     testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
 }
 
@@ -156,3 +156,4 @@ example_str := `7 6 4 2 1
 8 6 4 4 1
 1 3 6 7 9
 `
+example_u8 := transmute([]u8)example_str

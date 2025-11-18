@@ -4,7 +4,7 @@ import "../lib"
 import "core:testing"
 import "core:fmt"
 
-INPUT :: #load("day_99.txt", string)
+INPUT :: #load("day_99.txt", []u8)
 
 solution  := lib.Solution{
     day = 99,
@@ -15,11 +15,11 @@ solution  := lib.Solution{
     expected_part2 = 42,
 }
 
-part1 :: proc(s:string) -> int {
+part1 :: proc(s: []u8) -> u64 {
     return 42
 }
 
-part2 :: proc(s:string) -> int {
+part2 :: proc(s: []u8) -> u64 {
     return 42
 }
 
@@ -29,8 +29,8 @@ part2 :: proc(s:string) -> int {
 
 @(test)
 test_example_part1 :: proc(t: ^testing.T) {
-    p1_example := part1(example_str)
-    expected :int = 42
+    p1_example := part1(example_u8)
+    expected: u64 = 42
     testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
 }
 
@@ -43,8 +43,8 @@ test_part1 :: proc(t: ^testing.T) {
 
 @(test)
 test_example_part2 :: proc(t: ^testing.T) {
-    p2_example := part2(example_str)
-    expected :int = 42
+    p2_example := part2(example_u8)
+    expected: u64 = 42
     testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
 }
 
@@ -57,3 +57,4 @@ test_part2 :: proc(t: ^testing.T) {
 
 example_str := ``
 
+example_u8 := transmute([]u8)example_str

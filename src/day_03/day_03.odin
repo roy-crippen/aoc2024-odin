@@ -6,8 +6,7 @@ import "core:slice"
 import "core:testing"
 
 
-INPUT_U8 :: #load("day_03.txt", []u8)
-INPUT :: #load("day_03.txt", string)
+INPUT :: #load("day_03.txt", []u8)
 
 solution := lib.Solution {
     day            = 03,
@@ -36,11 +35,10 @@ parse_val :: proc(s: []u8) -> int {
     return a * b
 }
 
-part1 :: proc(s: string) -> (result: int) {
-    xs := transmute([]u8)s
+part1 :: proc(xs: []u8) -> u64 {
     t: string = "mul("
     mul_slice := transmute([]u8)t
-    i: int
+    result, i: int
 
     for ; i < len(xs); i += 1 {
         if !is_mul(xs[i:], mul_slice) {continue}
@@ -49,10 +47,10 @@ part1 :: proc(s: string) -> (result: int) {
         result += parse_val(xs[i:i + j + 1])
         i += j
     }
-    return
+    return cast(u64)result
 }
 
-part2 :: proc(s: string) -> (result: int) {
+part2 :: proc(xs: []u8) -> u64 {
     t: string = "mul("
     mul_slice := transmute([]u8)t
     t = "do()"
@@ -60,8 +58,7 @@ part2 :: proc(s: string) -> (result: int) {
     t = "don't()"
     dont_slice := transmute([]u8)t
 
-    xs := transmute([]u8)s
-    i: int
+    result, i: int
     enabled := true
 
     for ; i < len(xs); i += 1 {
@@ -83,7 +80,7 @@ part2 :: proc(s: string) -> (result: int) {
         result += parse_val(xs[i:i + j + 1])
         i += j
     }
-    return
+    return cast(u64)result
 }
 
 /*
@@ -92,8 +89,8 @@ part2 :: proc(s: string) -> (result: int) {
 
 @(test)
 test_example_part1 :: proc(t: ^testing.T) {
-    p1_example := part1(example_str)
-    expected: int = 161
+    p1_example := part1(example_u8)
+    expected: u64 = 161
     testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
 }
 
@@ -106,8 +103,8 @@ test_part1 :: proc(t: ^testing.T) {
 
 @(test)
 test_example_part2 :: proc(t: ^testing.T) {
-    p2_example := part2(example_str)
-    expected: int = 48
+    p2_example := part2(example_u8)
+    expected: u64 = 48
     testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
 }
 
@@ -118,5 +115,6 @@ test_part2 :: proc(t: ^testing.T) {
     testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
 }
 
-// example_str := `xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))`
 example_str := `xmul(2,4)&mul(3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))`
+
+example_u8 := transmute([]u8)example_str
