@@ -1,0 +1,2 @@
+#!/bin/zsh
+odinfmt . -w

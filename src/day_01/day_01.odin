@@ -18,11 +18,8 @@ solution := lib.Solution {
     expected_part2 = 24_941_624,
 }
 
-parse :: proc(s: []u8) -> (sa.Small_Array(1024, i32), sa.Small_Array(1024, i32)) {
-    xs: sa.Small_Array(1024, i32)
-    ys: sa.Small_Array(1024, i32)
-    i := 0
-
+parse :: proc(s: []u8) -> (xs: sa.Small_Array(1024, i32), ys: sa.Small_Array(1024, i32)) {
+    i: int
     for i < len(s) {
         if i < len(s) && s[i] == '\n' {
             i += 1
@@ -47,32 +44,34 @@ parse :: proc(s: []u8) -> (sa.Small_Array(1024, i32), sa.Small_Array(1024, i32))
     return xs, ys
 }
 
-part1 :: proc(s: []u8) -> u64 {
+part1 :: proc(s: []u8) -> (result: u64) {
     sa_xs, sa_ys := parse(s)
     xs := sa.slice(&sa_xs)
     ys := sa.slice(&sa_ys)
     sort.heap_sort(xs)
     sort.heap_sort(ys)
 
-    sum: i32 = 0
+    sum: i32
     for i in 0 ..< len(xs) {
         diff := xs[i] - ys[i]
         sum += diff if diff >= 0 else -diff
     }
-    return cast(u64)sum
+    result = cast(u64)sum
+    return
 }
 
-part2 :: proc(s: []u8) -> u64 {
+part2 :: proc(s: []u8) -> (result: u64) {
     sa_xs, sa_ys := parse(s)
     xs := sa.slice(&sa_xs)
     ys := sa.slice(&sa_ys)
-    sum: i32 = 0
+    sum: i32
     for x in xs {
         for y in ys {
             sum += x if x == y else 0
         }
     }
-    return cast(u64)sum
+    result = cast(u64)sum
+    return
 }
 
 

@@ -1,4 +1,6 @@
 {
   "character_width": 120,
   "tabs": false,
+  "align_struct_fields": true,
+  "align_struct_values": true
 }

@@ -1,26 +1,28 @@
 package day_99
 
 import "../lib"
-import "core:testing"
 import "core:fmt"
+import "core:testing"
 
 INPUT :: #load("day_99.txt", []u8)
 
-solution  := lib.Solution{
-    day = 99,
-    input = INPUT,
-    part1 = part1,
-    part2 = part2,
+solution := lib.Solution {
+    day            = 99,
+    input          = INPUT,
+    part1          = part1,
+    part2          = part2,
     expected_part1 = 42,
     expected_part2 = 42,
 }
 
-part1 :: proc(s: []u8) -> u64 {
-    return 42
+part1 :: proc(s: []u8) -> (result: u64) {
+    result = 42
+    return
 }
 
-part2 :: proc(s: []u8) -> u64 {
-    return 42
+part2 :: proc(s: []u8) -> (result: u64) {
+    result = 42
+    return
 }
 
 /*

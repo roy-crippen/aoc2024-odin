@@ -3,14 +3,11 @@ package lib
 import "core:fmt"
 import "core:testing"
 
-// best 1,2,3,99 = Total time:  1.042ms
-// ave 1,2,3,99 = approximately 1.500ms
-
 Solution :: struct {
     day:            u8,
     input:          []u8,
-    part1:          proc([]u8) -> u64,
-    part2:          proc([]u8) -> u64,
+    part1:          proc(_: []u8) -> u64,
+    part2:          proc(_: []u8) -> u64,
     expected_part1: u64,
     expected_part2: u64,
 }
@@ -30,7 +27,7 @@ parse_string_to_i32 :: #force_inline proc(s: string) -> (result: i32) {
     return
 }
 
-parse_slice_u8_int :: proc(s: []u8) -> (result: int) {
+parse_slice_u8_to_int :: proc(s: []u8) -> (result: int) {
     for c in s {result = result * 10 + (int(c) - '0')}
     return
 }

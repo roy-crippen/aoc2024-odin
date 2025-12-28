@@ -27,30 +27,32 @@ get_close_paren_idx :: #force_inline proc(s: []u8) -> int {
     return i
 }
 
-parse_val :: proc(s: []u8) -> int {
+parse_val :: proc(s: []u8) -> (val: int) {
     comma_idx, ok := slice.linear_search(s, ',')
     if !ok {return 0}
-    a := lib.parse_slice_u8_int(s[4:comma_idx])
-    b := lib.parse_slice_u8_int(s[comma_idx + 1:len(s) - 1])
-    return a * b
+    a := lib.parse_slice_u8_to_int(s[4:comma_idx])
+    b := lib.parse_slice_u8_to_int(s[comma_idx + 1:len(s) - 1])
+    val = a * b
+    return
 }
 
-part1 :: proc(xs: []u8) -> u64 {
+part1 :: proc(xs: []u8) -> (result: u64) {
     t: string = "mul("
     mul_slice := transmute([]u8)t
-    result, i: int
+    res, i: int
 
     for ; i < len(xs); i += 1 {
         if !is_mul(xs[i:], mul_slice) {continue}
         j := get_close_paren_idx(xs[i:])
         if (j >= 12) {continue}
-        result += parse_val(xs[i:i + j + 1])
+        res += parse_val(xs[i:i + j + 1])
         i += j
     }
-    return cast(u64)result
+    result = cast(u64)res
+    return
 }
 
-part2 :: proc(xs: []u8) -> u64 {
+part2 :: proc(xs: []u8) -> (result: u64) {
     t: string = "mul("
     mul_slice := transmute([]u8)t
     t = "do()"
@@ -58,7 +60,7 @@ part2 :: proc(xs: []u8) -> u64 {
     t = "don't()"
     dont_slice := transmute([]u8)t
 
-    result, i: int
+    res, i: int
     enabled := true
 
     for ; i < len(xs); i += 1 {
@@ -77,10 +79,11 @@ part2 :: proc(xs: []u8) -> u64 {
         if !enabled || !is_mul(xs[i:], mul_slice) {continue}
         j := get_close_paren_idx(xs[i:])
         if (j >= 12) {continue}
-        result += parse_val(xs[i:i + j + 1])
+        res += parse_val(xs[i:i + j + 1])
         i += j
     }
-    return cast(u64)result
+    result = cast(u64)res
+    return
 }
 
 /*

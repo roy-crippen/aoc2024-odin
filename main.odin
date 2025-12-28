@@ -5,6 +5,7 @@ import "core:time"
 import "src/day_01"
 import "src/day_02"
 import "src/day_03"
+import "src/day_04"
 import "src/day_99"
 import "src/lib"
 
@@ -13,9 +14,9 @@ main :: proc() {
     //    fmt.println(os.args[0])  // executable name
     //    fmt.println(os.args[1:]) // the rest of the arguments
 
-    sols := []lib.Solution{day_01.solution, day_02.solution, day_03.solution, day_99.solution}
+    sols := []lib.Solution{day_01.solution, day_02.solution, day_03.solution, day_04.solution, day_99.solution}
 
-    tot_time := 0.0
+    tot_time: f64
     for sol in sols {
         start := time.now()
         result := sol.part1(sol.input)

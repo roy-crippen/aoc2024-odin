@@ -83,19 +83,20 @@ solution := lib.Solution {
 
 run :: proc(s: []u8, f: proc(_: string) -> bool) -> (cnt: u64) {
     s_mut := string(s)
-    cnt = 0
     for line in strings.split_lines_iterator(&s_mut) {
         cnt += 1 if f(line) else 0
     }
     return
 }
 
-part1 :: proc(s: []u8) -> (cnt: u64) {
-    return run(s, is_safe_part1)
+part1 :: proc(s: []u8) -> (result: u64) {
+    result = run(s, is_safe_part1)
+    return
 }
 
-part2 :: proc(s: []u8) -> (cnt: u64) {
-    return run(s, is_safe_part2)
+part2 :: proc(s: []u8) -> (result: u64) {
+    result = run(s, is_safe_part2)
+    return
 }
 
 /*
