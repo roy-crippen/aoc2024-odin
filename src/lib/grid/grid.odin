@@ -1,16 +1,33 @@
 package lib_grid
 
 import sa "core:container/small_array"
-import "core:fmt"
-import "core:mem"
-import "core:slice"
-import "core:strings"
+
+//import "core:fmt"
+//import "core:log"
+//import "../../lib"
+
+//import "core:mem"
+//import "core:slice"
+//import "core:strings"
 import "core:testing"
 
-Grid :: struct($R, $C: int, $T: typeid) where R >= 1 && C >= 1 {
-    _data: [R][C]T,
-    rows:  int, // = R
-    cols:  int, // = C
+Grid :: struct($R, $C: int, $T: typeid) where R > 0,
+    C >= 0 {
+    data: [R][C]T,
+    rows: int, // = R
+    cols: int, // = C
+}
+
+Pos :: [2]int
+Dir :: enum {
+    N,
+    NW,
+    W,
+    SW,
+    S,
+    SE,
+    E,
+    NE,
 }
 
 // ────────────────────────────────────────────────
@@ -18,124 +35,139 @@ Grid :: struct($R, $C: int, $T: typeid) where R >= 1 && C >= 1 {
 // ────────────────────────────────────────────────
 
 // Creates a grid filled with the zero value of T
-create_grid :: proc($R, $C: int, $T: typeid) -> Grid(R, C, T) {
+create_grid :: proc "contextless" ($R, $C: int, $T: typeid) -> Grid(R, C, T) {
     grid: Grid(R, C, T)
     grid.rows = R
     grid.cols = C
-    // _data already zero-initialized
     return grid
 }
 
 // Creates a grid filled with the given value
-create_grid_with_value :: proc($R, $C: int, $T: typeid, value: T) -> Grid(R, C, T) {
-    grid: Grid(R, C, T)
-    grid.rows = R
-    grid.cols = C
-
-    for &row in grid._data {
+create_grid_with_value :: proc "contextless" ($R, $C: int, $T: typeid, value: T) -> Grid(R, C, T) {
+    g := create_grid(R, C, T)
+    for &row in g.data {
         for &cell in row {
             cell = value
         }
     }
+    return g
+}
 
-    return grid
+create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []T) -> Grid(R, C, T) {
+    // log.info(fmt.tprintf("%v, %v", R, C))
+    g := create_grid(R, C, T)
+    r, c: int
+    for value in s {
+        if value == '\n' {
+            assert(c == g.cols, "grid is not rectangular")
+            c = 0
+            r += 1
+            continue
+        }
+        g.data[r][c] = value
+        c += 1
+    }
+
+    return g
 }
 
 // ────────────────────────────────────────────────
 // Accessors (bounds-checked)
 // ────────────────────────────────────────────────
 
-get :: proc(g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: bool) {
+//get :: proc "contextless" (g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: bool) {
+//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
+//        return {}, false
+//    }
+//    value = g.data[r][c]
+//    return value, true
+//}
+//
+//set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
+//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
+//        return false
+//    }
+//    g.data[r][c] = value
+//    return true
+//}
+
+get :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool) {
+    r, c := pos[0], pos[1]
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return {}, false
     }
-    value = g._data[r][c]
+    value = g.data[r][c]
     return value, true
 }
 
-set :: proc(g: ^Grid($R, $C, $T), r, c: int, value: T) -> (ok: bool) {
+set :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
+    r, c := pos[0], pos[1]
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return false
     }
-    g._data[r][c] = value
+    g.data[r][c] = value
     return true
 }
 
+
 // ────────────────────────────────────────────────
-// Display
+// Neighbors
 // ────────────────────────────────────────────────
 
-// Basic multi-line string (each row using default %v formatting)
-show :: proc(g: $A/Grid) -> (res_str: string) {
-    context.allocator = context.temp_allocator
 
-    b: strings.Builder
-    strings.builder_init(&b)
-    defer strings.builder_destroy(&b)
+//move :: proc "contextless" (r, c: int, dir: Dir) -> (int, int) {
+//    switch dir {
+//    case .N:
+//        return r - 1, c
+//    case .NW:
+//        return r - 1, c - 1
+//    case .W:
+//        return r, c - 1
+//    case .SW:
+//        return r + 1, c - 1
+//    case .S:
+//        return r + 1, c
+//    case .SE:
+//        return r + 1, c + 1
+//    case .E:
+//        return r, c + 1
+//    case .NE:
+//        return r - 1, c + 1
+//    }
+//    return r, c
+//}
 
-    for row, ri in g._data {
-        if ri > 0 {
-            strings.write_byte(&b, '\n')
-        }
-        fmt.sbprint(&b, row)
+move :: proc "contextless" (pos: Pos, dir: Dir) -> Pos {
+    r, c := pos[0], pos[1]
+    switch dir {
+    case .N:
+        return {r - 1, c}
+    case .NW:
+        return {r - 1, c - 1}
+    case .W:
+        return {r, c - 1}
+    case .SW:
+        return {r + 1, c - 1}
+    case .S:
+        return {r + 1, c}
+    case .SE:
+        return {r + 1, c + 1}
+    case .E:
+        return {r, c + 1}
+    case .NE:
+        return {r - 1, c + 1}
     }
-
-    return strings.to_string(b)
+    return {r, c}
 }
 
-// Pretty-printed version with aligned columns
-show_pretty :: proc(g: $A/Grid, allocator := context.allocator) -> string {
-    b: strings.Builder
-    strings.builder_init(&b, allocator)
-    defer strings.builder_destroy(&b)
-
-    // Find max width for alignment
-    max_w := 0
-    for row in g._data {
-        for v in row {
-            w := len(fmt.tprintf("%v", v))
-            if w > max_w {max_w = w}
-        }
-    }
-
-    for row, ri in g._data {
-        if ri > 0 {strings.write_byte(&b, '\n')}
-        for v, ci in row {
-            if ci > 0 {strings.write_string(&b, "  ")}
-            fmt.sbprintf(&b, "%*v", max_w, v)
-        }
-    }
-
-    return strings.to_string(b)
-}
-
-// Prints u8 grid as characters with single space separator, no fancy alignment
-// Very clean for mazes, tile maps, cellular automata, etc.
-show_pretty_char :: proc(g: Grid($R, $C, u8)) -> string {
-    context.allocator = context.temp_allocator
-
-    b: strings.Builder
-    strings.builder_init(&b)
-    defer strings.builder_destroy(&b)
-
-    for row, ri in g._data {
-        if ri > 0 {
-            strings.write_byte(&b, '\n')
-        }
-        for cell, ci in row {
-            if ci > 0 {
-                strings.write_byte(&b, ' ')
-            }
-            strings.write_rune(&b, rune(cell))
-        }
-    }
-
-    return strings.to_string(b)
-}
-
-// ────────────────────────────────────────────────
-// Neighbors (very useful for AoC grid problems)
-// ────────────────────────────────────────────────
+north :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .N) }
+north_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .NW) }
+west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .W) }
+south_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .SW) }
+south :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .S) }
+south_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .SE) }
+east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .E) }
+north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .NE) }
 
 directions_cardinal := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 directions_diagonal := [][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
@@ -183,6 +215,78 @@ neighbors :: proc(
 }
 
 // ────────────────────────────────────────────────
+// Display
+// ────────────────────────────────────────────────
+
+// Basic multi-line string (each row using default %v formatting)
+show :: proc(g: $A/Grid) -> string {
+    context.allocator = context.temp_allocator
+
+    b: strings.Builder
+    strings.builder_init(&b)
+    defer strings.builder_destroy(&b)
+
+    for row, ri in g.data {
+        if ri > 0 {
+            strings.write_byte(&b, '\n')
+        }
+        fmt.sbprint(&b, row)
+    }
+
+    return strings.to_string(b)
+}
+
+// Pretty-printed version with aligned columns
+show_pretty :: proc(g: $A/Grid, allocator := context.allocator) -> string {
+    b: strings.Builder
+    strings.builder_init(&b, allocator)
+    defer strings.builder_destroy(&b)
+
+    // Find max width for alignment
+    max_w := 0
+    for row in g.data {
+        for v in row {
+            w := len(fmt.tprintf("%v", v))
+            if w > max_w { max_w = w }
+        }
+    }
+
+    for row, ri in g.data {
+        if ri > 0 { strings.write_byte(&b, '\n') }
+        for v, ci in row {
+            if ci > 0 { strings.write_string(&b, "  ") }
+            fmt.sbprintf(&b, "%*v", max_w, v)
+        }
+    }
+
+    return strings.to_string(b)
+}
+
+// Prints u8 grid as characters with single space separator, no fancy alignment
+// Very clean for mazes, tile maps, cellular automata, etc.
+show_pretty_char :: proc(g: Grid($R, $C, u8)) -> string {
+    context.allocator = context.temp_allocator
+
+    b: strings.Builder
+    strings.builder_init(&b)
+    defer strings.builder_destroy(&b)
+
+    for row, ri in g.data {
+        if ri > 0 {
+            strings.write_byte(&b, '\n')
+        }
+        for cell, ci in row {
+            if ci > 0 {
+                strings.write_byte(&b, ' ')
+            }
+            strings.write_rune(&b, rune(cell))
+        }
+    }
+
+    return strings.to_string(b)
+}
+
+// ────────────────────────────────────────────────
 // Tests
 // ────────────────────────────────────────────────
 
@@ -192,20 +296,25 @@ test_grid :: proc(t: ^testing.T) {
     g0 := create_grid(2, 3, i32)
     testing.expect(t, g0.rows == 2)
     testing.expect(t, g0.cols == 3)
-    testing.expect(t, g0._data[0][0] == 0)
+    testing.expect(t, g0.data[0][0] == 0)
 
     // Value-init
     g1: Grid(3, 3, u8) = create_grid_with_value(3, 3, u8, '.')
-    testing.expect(t, g1._data[1][1] == '.')
+    testing.expect(t, g1.data[1][1] == '.')
 
     // Accessors
-    v, ok := get(g1, 1, 1)
+    v, ok := get(g1, {1, 1})
     testing.expect(t, ok && v == '.')
-    _, ok2 := get(g1, 10, 10)
+    _, ok2 := get(g1, {10, 10})
     testing.expect(t, !ok2)
 
-    ok = set(&g1, 1, 1, '#')
-    testing.expect(t, g1._data[1][1] == '#')
+    ok = set(&g1, {1, 1}, '#')
+    testing.expect(t, g1.data[1][1] == '#')
+
+    // Neighbors
+    nbs, ok_n := neighbors(g1, 1, 1, true)
+    // fmt.eprintln(nbs)
+    testing.expect(t, ok_n && len(nbs) == 8)
 
     // Display
     // fmt.eprintln("\nbasic show:")
@@ -215,8 +324,4 @@ test_grid :: proc(t: ^testing.T) {
     // fmt.eprintln("\npretty char show:")
     // fmt.eprintln(show_pretty_char(g1))
 
-    // Neighbors
-    nbs, ok_n := neighbors(g1, 1, 1, true)
-    // fmt.eprintln(nbs)
-    testing.expect(t, ok_n && len(nbs) == 8)
 }
