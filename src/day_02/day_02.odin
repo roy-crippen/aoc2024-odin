@@ -47,10 +47,10 @@ is_safe :: proc(xs: []int) -> bool {
         if is_pair_safe(xs[i], xs[i + 1], asc) {
             continue
         }
-        if try_skip {return false}
+        if try_skip { return false }
         if i < len(xs) - 2 {
             try_skip = true
-            if !is_pair_safe(xs[i], xs[i + 2], asc) {return false}
+            if !is_pair_safe(xs[i], xs[i + 2], asc) { return false }
             i += 1
         }
     }

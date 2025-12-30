@@ -3,10 +3,10 @@
 if [[ $1 == "release" ]]
 then
   shift
-  echo "building 'release' executable -> ./bin/main"
-  odin build . -show-timings -out=bin/main -o:speed
+  echo "building 'release' executable -> ./main"
+  odin build . -show-timings -out=main -o:speed -vet -vet-cast -vet-style
 else
   shift
-  echo "building 'debug' executable -> ./bin/main"
-  odin build . -show-timings -out=bin/main -o:none -debug
+  echo "building 'debug' executable -> ./main"
+  odin build . -show-timings -out=main -o:none -debug -vet -vet-cast -vet-style
 fi

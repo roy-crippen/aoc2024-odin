@@ -1,6 +1,7 @@
 package lib
 
 import "core:fmt"
+import "core:strings"
 import "core:testing"
 
 Solution :: struct {
@@ -13,29 +14,32 @@ Solution :: struct {
 }
 
 parse_string_to_int :: proc(s: string) -> (result: int) {
-    for c in s {result = result * 10 + (int(c) - '0')}
+    for c in s { result = result * 10 + (int(c) - '0') }
     return
 }
 
 parse_string_to_u32 :: proc(s: string) -> (result: u32) {
-    for c in s {result = result * 10 + (u32(c) - '0')}
+    for c in s { result = result * 10 + (u32(c) - '0') }
     return
 }
 
 parse_string_to_i32 :: #force_inline proc(s: string) -> (result: i32) {
-    for c in s {result = result * 10 + (i32(c) - '0')}
+    for c in s { result = result * 10 + (i32(c) - '0') }
     return
 }
 
 parse_slice_u8_to_int :: proc(s: []u8) -> (result: int) {
-    for c in s {result = result * 10 + (int(c) - '0')}
+    for c in s { result = result * 10 + (int(c) - '0') }
     return
 }
 
 parse_slice_u8_to_i32 :: proc(s: []u8) -> (result: i32) {
-    for c in s {result = result * 10 + (i32(c) - '0')}
+    for c in s { result = result * 10 + (i32(c) - '0') }
     return
 }
+
+dbg :: proc(s: string) -> string { return strings.concatenate({"\n", s, "\n"}, context.temp_allocator) }
+
 
 /*
    tests -----------------------------

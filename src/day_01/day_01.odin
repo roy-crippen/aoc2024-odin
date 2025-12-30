@@ -4,7 +4,6 @@ import "../lib"
 import sa "core:container/small_array"
 import "core:fmt"
 import "core:sort"
-import "core:strings"
 import "core:testing"
 
 INPUT :: #load("day_01.txt", []u8)

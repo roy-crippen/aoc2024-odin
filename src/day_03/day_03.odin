@@ -17,19 +17,19 @@ solution := lib.Solution {
     expected_part2 = 111762583,
 }
 
-is_mul :: #force_inline proc(s: []u8, mul_slice: []u8) -> bool {return slice.has_prefix(s, mul_slice)}
-is_do :: #force_inline proc(s: []u8, do_slice: []u8) -> bool {return slice.has_prefix(s, do_slice)}
-is_dont :: #force_inline proc(s: []u8, dont_slice: []u8) -> bool {return slice.has_prefix(s, dont_slice)}
+is_mul :: #force_inline proc(s: []u8, mul_slice: []u8) -> bool { return slice.has_prefix(s, mul_slice) }
+is_do :: #force_inline proc(s: []u8, do_slice: []u8) -> bool { return slice.has_prefix(s, do_slice) }
+is_dont :: #force_inline proc(s: []u8, dont_slice: []u8) -> bool { return slice.has_prefix(s, dont_slice) }
 
 get_close_paren_idx :: #force_inline proc(s: []u8) -> int {
     i, b := slice.linear_search(s, ')')
-    if !b {panic("parse error looking for ')'")}
+    if !b { panic("parse error looking for ')'") }
     return i
 }
 
 parse_val :: proc(s: []u8) -> (val: int) {
     comma_idx, ok := slice.linear_search(s, ',')
-    if !ok {return 0}
+    if !ok { return 0 }
     a := lib.parse_slice_u8_to_int(s[4:comma_idx])
     b := lib.parse_slice_u8_to_int(s[comma_idx + 1:len(s) - 1])
     val = a * b
@@ -42,9 +42,9 @@ part1 :: proc(xs: []u8) -> (result: u64) {
     res, i: int
 
     for ; i < len(xs); i += 1 {
-        if !is_mul(xs[i:], mul_slice) {continue}
+        if !is_mul(xs[i:], mul_slice) { continue }
         j := get_close_paren_idx(xs[i:])
-        if (j >= 12) {continue}
+        if (j >= 12) { continue }
         res += parse_val(xs[i:i + j + 1])
         i += j
     }
@@ -76,9 +76,9 @@ part2 :: proc(xs: []u8) -> (result: u64) {
             continue
         }
 
-        if !enabled || !is_mul(xs[i:], mul_slice) {continue}
+        if !enabled || !is_mul(xs[i:], mul_slice) { continue }
         j := get_close_paren_idx(xs[i:])
-        if (j >= 12) {continue}
+        if (j >= 12) { continue }
         res += parse_val(xs[i:i + j + 1])
         i += j
     }

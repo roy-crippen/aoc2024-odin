@@ -2,5 +2,7 @@
   "character_width": 120,
   "tabs": false,
   "align_struct_fields": true,
-  "align_struct_values": true
+  "align_struct_values": true,
+  "newline_limit": 2,
+  "space_single_line_blocks": true
 }
