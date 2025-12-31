@@ -1,14 +1,6 @@
 package lib_grid
 
 import sa "core:container/small_array"
-
-//import "core:fmt"
-//import "core:log"
-//import "../../lib"
-
-//import "core:mem"
-//import "core:slice"
-//import "core:strings"
 import "core:testing"
 
 Grid :: struct($R, $C: int, $T: typeid) where R > 0 {
@@ -18,6 +10,7 @@ Grid :: struct($R, $C: int, $T: typeid) where R > 0 {
 }
 
 Pos :: [2]int
+
 Dir :: enum {
     N,
     NW,
@@ -112,22 +105,10 @@ set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
 
 get_pos :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool) {
     return get(g, pos[0], pos[1])
-
-//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
-//        return {}, false
-//    }
-//    value = g.data[r][c]
-//    return value, true
 }
 
 set_pos :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
     return set(g, pos[0], pos[1], value)
-
-//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
-//        return false
-//    }
-//    g.data[r][c] = value
-//    return true
 }
 
 
@@ -175,6 +156,7 @@ north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_p
 directions_cardinal := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 directions_diagonal := [][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 
+// todo: simplify and break into 2 or 3 functions
 neighbors :: proc(
     g: $A/Grid,
     r, c: int,
