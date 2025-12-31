@@ -81,7 +81,6 @@ create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, 
     for &row in s { assert(len(row) == C, "grid is not rectangular") }
 
     g := create_grid(R, C, T)
-    r, c: int
     for row, r in s {
         for value, c in row {
             g.data[r][c] = value
@@ -95,24 +94,7 @@ create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, 
 // Accessors (bounds-checked)
 // ────────────────────────────────────────────────
 
-//get :: proc "contextless" (g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: bool) {
-//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
-//        return {}, false
-//    }
-//    value = g.data[r][c]
-//    return value, true
-//}
-//
-//set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
-//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
-//        return false
-//    }
-//    g.data[r][c] = value
-//    return true
-//}
-
-get :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool) {
-    r, c := pos[0], pos[1]
+get :: proc "contextless" (g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: bool) {
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return {}, false
     }
@@ -120,13 +102,32 @@ get :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool
     return value, true
 }
 
-set :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
-    r, c := pos[0], pos[1]
+set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return false
     }
     g.data[r][c] = value
     return true
+}
+
+get_pos :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool) {
+    return get(g, pos[0], pos[1])
+
+//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
+//        return {}, false
+//    }
+//    value = g.data[r][c]
+//    return value, true
+}
+
+set_pos :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
+    return set(g, pos[0], pos[1], value)
+
+//    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
+//        return false
+//    }
+//    g.data[r][c] = value
+//    return true
 }
 
 
@@ -158,8 +159,7 @@ move :: proc "contextless" (r, c: int, dir: Dir) -> (int, int) {
 }
 
 move_pos :: proc "contextless" (pos: Pos, dir: Dir) -> Pos {
-    in_r, in_c := pos[0], pos[1]
-    r, c := move(in_r, in_c, dir)
+    r, c := move(pos[0], pos[1], dir)
     return {r, c}
 }
 
@@ -306,12 +306,12 @@ test_grid :: proc(t: ^testing.T) {
     testing.expect(t, g1.data[1][1] == '.')
 
     // Accessors
-    v, ok := get(g1, {1, 1})
+    v, ok := get_pos(g1, {1, 1})
     testing.expect(t, ok && v == '.')
-    _, ok2 := get(g1, {10, 10})
+    _, ok2 := get_pos(g1, {10, 10})
     testing.expect(t, !ok2)
 
-    ok = set(&g1, {1, 1}, '#')
+    ok = set_pos(&g1, {1, 1}, '#')
     testing.expect(t, g1.data[1][1] == '#')
 
     // Neighbors
