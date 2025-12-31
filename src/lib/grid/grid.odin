@@ -11,8 +11,7 @@ import sa "core:container/small_array"
 //import "core:strings"
 import "core:testing"
 
-Grid :: struct($R, $C: int, $T: typeid) where R > 0,
-    C >= 0 {
+Grid :: struct($R, $C: int, $T: typeid) where R > 0 {
     data: [R][C]T,
     rows: int, // = R
     cols: int, // = C
@@ -53,9 +52,10 @@ create_grid_with_value :: proc "contextless" ($R, $C: int, $T: typeid, value: T)
     return g
 }
 
-create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []T) -> Grid(R, C, T) {
-    // log.info(fmt.tprintf("%v, %v", R, C))
-    g := create_grid(R, C, T)
+// Creates a grid from slice 's' of type []byte
+// Assumes each row is separated by '\n'
+create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []u8) -> Grid(R, C, T) {
+    g := create_grid(R, C, u8)
     r, c: int
     for value in s {
         if value == '\n' {
@@ -66,6 +66,26 @@ create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []T) -> Grid(R, C, T)
         }
         g.data[r][c] = value
         c += 1
+    }
+
+    return g
+}
+
+// Creates a grid from slice 's' of type [][]T
+create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, T) {
+    // validate R
+    rows := len(s)
+    assert(rows == R, "invalid input in call to create_grid")
+
+    // validate C
+    for &row in s { assert(len(row) == C, "grid is not rectangular") }
+
+    g := create_grid(R, C, T)
+    r, c: int
+    for row, r in s {
+        for value, c in row {
+            g.data[r][c] = value
+        }
     }
 
     return g
@@ -115,59 +135,42 @@ set :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
 // ────────────────────────────────────────────────
 
 
-//move :: proc "contextless" (r, c: int, dir: Dir) -> (int, int) {
-//    switch dir {
-//    case .N:
-//        return r - 1, c
-//    case .NW:
-//        return r - 1, c - 1
-//    case .W:
-//        return r, c - 1
-//    case .SW:
-//        return r + 1, c - 1
-//    case .S:
-//        return r + 1, c
-//    case .SE:
-//        return r + 1, c + 1
-//    case .E:
-//        return r, c + 1
-//    case .NE:
-//        return r - 1, c + 1
-//    }
-//    return r, c
-//}
-
-move :: proc "contextless" (pos: Pos, dir: Dir) -> Pos {
-    r, c := pos[0], pos[1]
+move :: proc "contextless" (r, c: int, dir: Dir) -> (int, int) {
     switch dir {
     case .N:
-        return {r - 1, c}
+        return r - 1, c
     case .NW:
-        return {r - 1, c - 1}
+        return r - 1, c - 1
     case .W:
-        return {r, c - 1}
+        return r, c - 1
     case .SW:
-        return {r + 1, c - 1}
+        return r + 1, c - 1
     case .S:
-        return {r + 1, c}
+        return r + 1, c
     case .SE:
-        return {r + 1, c + 1}
+        return r + 1, c + 1
     case .E:
-        return {r, c + 1}
+        return r, c + 1
     case .NE:
-        return {r - 1, c + 1}
+        return r - 1, c + 1
     }
+    return r, c
+}
+
+move_pos :: proc "contextless" (pos: Pos, dir: Dir) -> Pos {
+    in_r, in_c := pos[0], pos[1]
+    r, c := move(in_r, in_c, dir)
     return {r, c}
 }
 
-north :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .N) }
-north_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .NW) }
-west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .W) }
-south_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .SW) }
-south :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .S) }
-south_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .SE) }
-east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .E) }
-north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move(pos, .NE) }
+north :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .N) }
+north_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .NW) }
+west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .W) }
+south_west :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .SW) }
+south :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .S) }
+south_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .SE) }
+east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .E) }
+north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .NE) }
 
 directions_cardinal := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 directions_diagonal := [][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
@@ -324,4 +327,22 @@ test_grid :: proc(t: ^testing.T) {
     // fmt.eprintln("\npretty char show:")
     // fmt.eprintln(show_pretty_char(g1))
 
+}
+
+@(test)
+test_grid_create_grid_from_slice :: proc(t: ^testing.T) {
+    s: [][]u16 = {{1, 2, 3}, {4, 5, 6}}
+    g := create_grid_from_slice(2, 3, u16, s)
+    testing.expect(t, g.rows == 2)
+    testing.expect(t, g.cols == 3)
+    testing.expect(t, g.data[0][0] == 1)
+}
+
+@(test)
+test_grid_create_grid_from_bytes :: proc(t: ^testing.T) {
+    s: []u8 = {'.', '#', '.', '\n', '.', '.', '.'}
+    g := create_grid_from_bytes(2, 3, u8, s)
+    testing.expect(t, g.rows == 2)
+    testing.expect(t, g.cols == 3)
+    testing.expect(t, g.data[0][1] == '#')
 }

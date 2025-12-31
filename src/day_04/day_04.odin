@@ -18,15 +18,15 @@ solution := lib.Solution {
 }
 
 check_xmas_in_dir :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos, dir: gr.Dir) -> u64 {
-    m_pos := gr.move(pos, dir)
+    m_pos := gr.move_pos(pos, dir)
     m, m_ok := gr.get(g, m_pos)
     if !m_ok || m != 'M' { return 0 }
 
-    a_pos := gr.move(m_pos, dir)
+    a_pos := gr.move_pos(m_pos, dir)
     a, a_ok := gr.get(g, a_pos)
     if !a_ok || a != 'A' { return 0 }
 
-    s_pos := gr.move(a_pos, dir)
+    s_pos := gr.move_pos(a_pos, dir)
     s, s_ok := gr.get(g, s_pos)
     if !s_ok || s != 'S' { return 0 }
 
