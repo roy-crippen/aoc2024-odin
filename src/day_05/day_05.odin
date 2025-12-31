@@ -1,0 +1,62 @@
+package day_05
+
+import "../lib"
+import "core:fmt"
+import "core:testing"
+
+INPUT :: #load("day_05.txt", []u8)
+
+solution := lib.Solution {
+    day            = 05,
+    input          = INPUT,
+    part1          = part1,
+    part2          = part2,
+    expected_part1 = 42,
+    expected_part2 = 42,
+}
+
+part1 :: proc(s: []u8) -> (result: u64) {
+    result = 42
+    return
+}
+
+part2 :: proc(s: []u8) -> (result: u64) {
+    result = 42
+    return
+}
+
+/*
+   tests -----------------------------
+*/
+
+@(test)
+test_example_part1 :: proc(t: ^testing.T) {
+    p1_example := part1(example_u8)
+    expected: u64 = 42
+    testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
+}
+
+@(test)
+test_part1 :: proc(t: ^testing.T) {
+    p1 := part1(INPUT)
+    expected := solution.expected_part1
+    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
+}
+
+@(test)
+test_example_part2 :: proc(t: ^testing.T) {
+    p2_example := part2(example_u8)
+    expected: u64 = 42
+    testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
+}
+
+@(test)
+test_part2 :: proc(t: ^testing.T) {
+    p2 := part2(INPUT)
+    expected := solution.expected_part2
+    testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
+}
+
+example_str := ``
+
+example_u8 := transmute([]u8)example_str
