@@ -153,8 +153,19 @@ south_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_p
 east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .E) }
 north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .NE) }
 
-directions_cardinal := [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
-directions_diagonal := [][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
+directions_cardinal := [4][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+directions_diagonal := [4][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
+directions_all := [8][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
+
+neighbors_8 :: proc(pos: Pos) -> (xs: [8]Pos) {
+    r := pos[0]
+    c := pos[1]
+    for d, i in directions_all {
+        xs[i] = {r + d[0], c + d[1]}
+    }
+    return
+}
+
 
 // todo: simplify and break into 2 or 3 functions
 neighbors :: proc(
@@ -327,4 +338,11 @@ test_grid_create_grid_from_bytes :: proc(t: ^testing.T) {
     testing.expect(t, g.rows == 2)
     testing.expect(t, g.cols == 3)
     testing.expect(t, g.data[0][1] == '#')
+}
+
+@(test)
+test_neighbors_8 :: proc(t: ^testing.T) {
+    expected: [8]Pos = {{0, 1}, {2, 1}, {1, 0}, {1, 2}, {0, 0}, {0, 2}, {2, 0}, {2, 2}}
+    ns8 := neighbors_8({1, 1})
+    testing.expect(t, ns8 == expected)
 }
