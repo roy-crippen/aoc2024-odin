@@ -17,22 +17,6 @@ solution := lib.Solution {
     expected_part2 = 1850,
 }
 
-check_xmas_in_dir :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos, dir: gr.Dir) -> u64 {
-    m_pos := gr.move_pos(pos, dir)
-    m, m_ok := gr.get_pos(g, m_pos)
-    if !m_ok || m != 'M' { return 0 }
-
-    a_pos := gr.move_pos(m_pos, dir)
-    a, a_ok := gr.get_pos(g, a_pos)
-    if !a_ok || a != 'A' { return 0 }
-
-    s_pos := gr.move_pos(a_pos, dir)
-    s, s_ok := gr.get_pos(g, s_pos)
-    if !s_ok || s != 'S' { return 0 }
-
-    return 1
-}
-
 cross_xmas :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos) -> u64 {
     // nw and se
     nw, nw_ok := gr.get_pos(g, gr.north_west(pos))
@@ -53,6 +37,8 @@ cross_xmas :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos) -> u64 {
 
 part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, byte, s)
+    mas: [3]u8 = {'M', 'A', 'S'}
+    d8: [8]gr.Pos = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
     pos: gr.Pos
     for r in 0 ..< N {
@@ -60,14 +46,20 @@ part1 :: proc(s: []u8) -> (result: u64) {
             pos = {r, c}
             ch, ok := gr.get_pos(g, pos)
             if ok && ch == 'X' {
-                result += check_xmas_in_dir(g, pos, .N)
-                result += check_xmas_in_dir(g, pos, .NW)
-                result += check_xmas_in_dir(g, pos, .W)
-                result += check_xmas_in_dir(g, pos, .SW)
-                result += check_xmas_in_dir(g, pos, .S)
-                result += check_xmas_in_dir(g, pos, .SE)
-                result += check_xmas_in_dir(g, pos, .E)
-                result += check_xmas_in_dir(g, pos, .NE)
+                for d in d8 {
+                    failed := false
+                    for test_val, i in mas {
+                        dr, dc := d[0], d[1]
+                        j := i + 1
+                        move_pos: gr.Pos = {r + (dr * j), c + (dc * j)}
+                        val, found := gr.get_pos(g, move_pos)
+                        if !found || val != test_val {
+                            failed = true
+                            break
+                        }
+                    }
+                    if !failed { result += 1 }
+                }
             }
         }
     }
