@@ -30,8 +30,8 @@ get_close_paren_idx :: #force_inline proc(s: []u8) -> int {
 parse_val :: proc(s: []u8) -> (val: int) {
     comma_idx, ok := slice.linear_search(s, ',')
     if !ok { return 0 }
-    a := lib.parse_slice_u8_to_int(s[4:comma_idx])
-    b := lib.parse_slice_u8_to_int(s[comma_idx + 1:len(s) - 1])
+    a := lib.unsafe_slice_u8_to_int(s[4:comma_idx])
+    b := lib.unsafe_slice_u8_to_int(s[comma_idx + 1:len(s) - 1])
     val = a * b
     return
 }

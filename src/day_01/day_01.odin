@@ -37,8 +37,8 @@ parse :: proc(s: []u8) -> (xs: sa.Small_Array(1024, i32), ys: sa.Small_Array(102
         y_str := s[y_start:i]
         i += 1 // skip newline
 
-        sa.push_back(&xs, lib.parse_slice_u8_to_i32(x_str))
-        sa.push_back(&ys, lib.parse_slice_u8_to_i32(y_str))
+        sa.push_back(&xs, lib.unssafe_slice_u8_to_i32(x_str))
+        sa.push_back(&ys, lib.unssafe_slice_u8_to_i32(y_str))
     }
     return xs, ys
 }
