@@ -4,14 +4,16 @@ import "../../lib"
 import "core:container/bit_array"
 import "core:testing"
 
-// BitPairSet3 – compact bitset storing presence of (a,b) where a,b ∈ [0..10^N]
+// BitPairSet – compact bitset storing presence of (a,b) where a,b ∈ [0..10^N]
 BitPairSet :: struct {
     max_value: u64,
     bits:      bit_array.Bit_Array,
 }
 
 // Create a new empty set (all pairs false)
+// max_digits in range 0..=4
 create :: proc(max_digits: u64, allocator := context.allocator) -> (s: BitPairSet, ok: bool) {
+    if max_digits < 1 || max_digits > 4 { return s, false }
     s.max_value = lib.pow(10, max_digits + 1)
     total := int(s.max_value * s.max_value)
     ok = bit_array.init(&s.bits, total, 0, allocator)
@@ -129,4 +131,16 @@ test_encode :: proc(t: ^testing.T) {
     idx := _encode(12, 45, s.max_value)
     a, b := _decode(idx, s.max_value)
     testing.expect(t, a == 12 && b == 45)
+}
+@(test)
+test_max_size :: proc(t: ^testing.T) {
+    s, ok := create(0)
+    defer destroy(&s)
+    testing.expect(t, !ok)
+
+    s, ok = create(5)
+    testing.expect(t, !ok)
+
+    s, ok = create(3)
+    testing.expect(t, ok)
 }
