@@ -11,10 +11,6 @@ import "src/day_99"
 import "src/lib"
 
 main :: proc() {
-    // os.args is a []string
-    //    fmt.println(os.args[0])  // executable name
-    //    fmt.println(os.args[1:]) // the rest of the arguments
-
     sols := []lib.Solution {
         day_01.solution,
         day_02.solution,
