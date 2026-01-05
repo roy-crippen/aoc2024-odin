@@ -1,10 +1,10 @@
 package lib_grid
 
-import "../../lib"
-import sa "core:container/small_array"
-import "core:fmt"
-import "core:log"
-import "core:strings"
+// import "../../lib"
+// import sa "core:container/small_array"
+// import "core:fmt"
+// import "core:log"
+// import "core:strings"
 import "core:testing"
 
 // Grid: R=rows, C=cols, P=padding_count, T=grid_ty
@@ -344,7 +344,7 @@ test_grid_create_grid_from_bytes :: proc(t: ^testing.T) {
     testing.expect(t, g.cols == 3)
     testing.expect(t, g.data[0][1] == '#')
 
-    g1 := create_grid_from_bytes(2, 3, 1, u8, s)
+    // g1 := create_grid_from_bytes(2, 3, 1, u8, s)
     // log.info(lib.dbg(show_pretty_char(g1)))
 }
 
