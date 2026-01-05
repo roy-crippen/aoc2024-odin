@@ -8,5 +8,5 @@ then
 else
   shift
   echo "building 'debug' executable -> ./main"
-  odin build . -show-timings -out=main -o:none -debug -vet -vet-cast -vet-style
+  odin build . -show-timings -out=main -o:none -debug  -vet-cast -vet-style
 fi

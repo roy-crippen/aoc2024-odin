@@ -2,22 +2,24 @@ package main
 
 import "core:fmt"
 import "core:time"
-import "src/day_01"
-import "src/day_02"
-import "src/day_03"
-import "src/day_04"
+// import "src/day_01"
+// import "src/day_02"
+// import "src/day_03"
+// import "src/day_04"
 import "src/day_05"
-import "src/day_99"
+import "src/day_06"
+// import "src/day_99"
 import "src/lib"
 
 main :: proc() {
     sols := []lib.Solution {
-        day_01.solution,
-        day_02.solution,
-        day_03.solution,
-        day_04.solution,
+        // day_01.solution,
+        // day_02.solution,
+        // day_03.solution,
+        // day_04.solution,
         day_05.solution,
-        day_99.solution,
+        day_06.solution,
+        // day_99.solution,
     }
 
     tot_time: f64
