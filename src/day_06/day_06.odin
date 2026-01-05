@@ -64,7 +64,7 @@ simulate_guard_path :: proc(
     _ = ba.init(&visited, max_index = (N + 2) * (N + 2), min_index = 0)
     defer ba.destroy(&visited)
 
-    // initial simulation
+    // initialize simulation
     st := State {
         r    = start_r,
         c    = start_c,
@@ -78,6 +78,7 @@ simulate_guard_path :: proc(
     unique_count = 1
     sa.push_back(&route, st)
 
+    // simulate
     for {
         nr := st.r + dr
         nc := st.c + dc
@@ -113,8 +114,7 @@ part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
     start_pos, _ := gr.find_first_position(&g, '^')
     _, unique_count := simulate_guard_path(&g, start_pos[0], start_pos[1])
-    result = u64(unique_count)
-    return
+    return unique_count
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
