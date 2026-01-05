@@ -1,12 +1,18 @@
 package lib_grid
 
+import "../../lib"
 import sa "core:container/small_array"
+import "core:fmt"
+import "core:log"
+import "core:strings"
 import "core:testing"
 
-Grid :: struct($R, $C: int, $T: typeid) where R > 0 {
-    data: [R][C]T,
-    rows: int, // = R
-    cols: int, // = C
+// Grid: R=rows, C=cols, P=padding_count, T=grid_ty
+Grid :: struct($R, $C, $P: int, $T: typeid) where R > 0 {
+    data:    [R + 2 * P][C + 2 * P]T,
+    rows:    int, // = R
+    cols:    int, // = C
+    pad_cnt: int, // = P
 }
 
 Pos :: [2]int
@@ -23,20 +29,21 @@ Dir :: enum {
 }
 
 // ────────────────────────────────────────────────
-// Creation
+// creation
 // ────────────────────────────────────────────────
 
 // Creates a grid filled with the zero value of T
-create_grid :: proc "contextless" ($R, $C: int, $T: typeid) -> Grid(R, C, T) {
-    grid: Grid(R, C, T)
-    grid.rows = R
-    grid.cols = C
+create_grid :: proc "contextless" ($R, $C, $P: int, $T: typeid) -> Grid(R, C, P, T) {
+    grid: Grid(R, C, P, T)
+    grid.rows = R + 2 * P
+    grid.cols = C + 2 * P
+    grid.pad_cnt = P
     return grid
 }
 
 // Creates a grid filled with the given value
-create_grid_with_value :: proc "contextless" ($R, $C: int, $T: typeid, value: T) -> Grid(R, C, T) {
-    g := create_grid(R, C, T)
+create_grid_with_value :: proc "contextless" ($R, $C, $P: int, $T: typeid, value: T) -> Grid(R, C, P, T) {
+    g := create_grid(R, C, P, T)
     for &row in g.data {
         for &cell in row {
             cell = value
@@ -47,13 +54,30 @@ create_grid_with_value :: proc "contextless" ($R, $C: int, $T: typeid, value: T)
 
 // Creates a grid from slice 's' of type []byte
 // Assumes each row is separated by '\n'
-create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []u8) -> Grid(R, C, T) {
-    g := create_grid(R, C, u8)
-    r, c: int
+create_grid_from_bytes :: proc($R, $C, $P: int, $T: typeid, s: []u8, pad_val: u8 = '#') -> Grid(R, C, P, T) {
+    g := create_grid(R, C, P, u8)
+    // pad first and last P rows
+    for i in 0 ..< g.pad_cnt {
+        for j in 0 ..< g.cols {
+            g.data[i][j] = pad_val
+            g.data[g.rows - i - 1][j] = pad_val
+        }
+    }
+
+    // pad first and last P cols
+    for j in 0 ..< g.pad_cnt {
+        for i in g.pad_cnt ..< g.rows - g.pad_cnt {
+            g.data[i][j] = pad_val
+            g.data[i][g.cols - j - 1] = pad_val
+        }
+    }
+
+    r, c: int = g.pad_cnt, g.pad_cnt
     for value in s {
         if value == '\n' {
-            assert(c == g.cols, "grid is not rectangular")
-            c = 0
+            // assert(c == g.cols, "grid is not rectangular")
+
+            c = g.pad_cnt
             r += 1
             continue
         }
@@ -64,8 +88,8 @@ create_grid_from_bytes :: proc($R, $C: int, $T: typeid, s: []u8) -> Grid(R, C, T
     return g
 }
 
-// Creates a grid from slice 's' of type [][]T
-create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, T) {
+// Creates a grid from slice 's' of type [][]T with padding size 0
+create_grid_from_slice :: proc($R, $C, $P: int, $T: typeid, s: [][]T) -> Grid(R, C, P, T) {
     // validate R
     rows := len(s)
     assert(rows == R, "invalid input in call to create_grid")
@@ -73,7 +97,7 @@ create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, 
     // validate C
     for &row in s { assert(len(row) == C, "grid is not rectangular") }
 
-    g := create_grid(R, C, T)
+    g := create_grid(R, C, P, T)
     for row, r in s {
         for value, c in row {
             g.data[r][c] = value
@@ -84,10 +108,10 @@ create_grid_from_slice :: proc($R, $C: int, $T: typeid, s: [][]T) -> Grid(R, C, 
 }
 
 // ────────────────────────────────────────────────
-// Accessors (bounds-checked)
+// accessors
 // ────────────────────────────────────────────────
 
-get :: proc "contextless" (g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: bool) {
+get :: proc "contextless" (g: Grid($R, $C, $P, $T), r, c: int) -> (value: T, ok: bool) {
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return {}, false
     }
@@ -95,7 +119,20 @@ get :: proc "contextless" (g: Grid($R, $C, $T), r, c: int) -> (value: T, ok: boo
     return value, true
 }
 
-set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
+get_pos :: proc "contextless" (g: Grid($R, $C, $P, $T), pos: Pos) -> (value: T, ok: bool) {
+    return get(g, pos[0], pos[1])
+}
+
+unsafe_get_pos :: #force_inline proc "contextless" (g: Grid($R, $C, $P, $T), pos: Pos) -> T {
+    return g.data[pos[0]][pos[1]]
+}
+
+unsafe_get :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), r, c: int) -> T {
+    return g.data[r][c]
+}
+
+
+set :: proc "contextless" (g: ^Grid($R, $C, $P, $T), r, c: int, value: T) -> bool {
     if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
         return false
     }
@@ -103,17 +140,21 @@ set :: proc "contextless" (g: ^Grid($R, $C, $T), r, c: int, value: T) -> bool {
     return true
 }
 
-get_pos :: proc "contextless" (g: Grid($R, $C, $T), pos: Pos) -> (value: T, ok: bool) {
-    return get(g, pos[0], pos[1])
+set_pos :: proc "contextless" (g: ^Grid($R, $C, $P, $T), pos: Pos, value: T) -> bool {
+    return set(g, pos[0], pos[1], value)
 }
 
-set_pos :: proc "contextless" (g: ^Grid($R, $C, $T), pos: Pos, value: T) -> bool {
-    return set(g, pos[0], pos[1], value)
+unsafe_set_pos :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), pos: Pos, value: T) {
+    g.data[pos[0]][pos[1]] = value
+}
+
+unsafe_set :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), r, c: int, value: T) {
+    g.data[r][c] = value
 }
 
 
 // ────────────────────────────────────────────────
-// Neighbors
+// neighbors
 // ────────────────────────────────────────────────
 
 
@@ -166,49 +207,17 @@ neighbors_8 :: proc(pos: Pos) -> (xs: [8]Pos) {
     return
 }
 
-
-// todo: simplify and break into 2 or 3 functions
-neighbors :: proc(
-    g: $A/Grid,
-    r, c: int,
-    include_diagonal := false,
-    allocator := context.temp_allocator,
-) -> (
-    result: [][2]int,
-    ok: bool,
-) {
-    sa_dirs: sa.Small_Array(8, [2]int)
-
-    dirs := directions_cardinal[:]
-    if include_diagonal {
-        sa.push_back_elems(&sa_dirs, ..directions_cardinal[:])
-        sa.push_back_elems(&sa_dirs, ..directions_diagonal[:])
-        dirs = sa.slice(&sa_dirs)
-    }
-
-    sa.clear(&sa_dirs)
-
-    for d in dirs {
-        nr := r + d[0]
-        nc := c + d[1]
-        if nr >= 0 && nr < g.rows && nc >= 0 && nc < g.cols {
-            sa.push_back(&sa_dirs, [2]int{nr, nc})
+find_first_position :: proc(g: ^Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok: bool) {
+    for row, r in g.data {
+        for val, c in row {
+            if val == v {
+                return {r, c}, true
+            }
         }
     }
-
-    count := sa.len(sa_dirs)
-    if count == 0 {
-        return
-    }
-
-    // Copy to returned slice (safe lifetime)
-    sl, err := make([][2]int, count, allocator)
-    if err != nil {
-        return
-    }
-    copy(sl, sa.slice(&sa_dirs))
-    return sl, true
+    return
 }
+
 
 // ────────────────────────────────────────────────
 // Display
@@ -260,7 +269,7 @@ show_pretty :: proc(g: $A/Grid, allocator := context.allocator) -> string {
 
 // Prints u8 grid as characters with single space separator, no fancy alignment
 // Very clean for mazes, tile maps, cellular automata, etc.
-show_pretty_char :: proc(g: Grid($R, $C, u8)) -> string {
+show_pretty_char :: proc(g: Grid($R, $C, $P, u8)) -> string {
     context.allocator = context.temp_allocator
 
     b: strings.Builder
@@ -289,13 +298,13 @@ show_pretty_char :: proc(g: Grid($R, $C, u8)) -> string {
 @(test)
 test_grid :: proc(t: ^testing.T) {
     // Zero-init
-    g0 := create_grid(2, 3, i32)
+    g0 := create_grid(2, 3, 0, i32)
     testing.expect(t, g0.rows == 2)
     testing.expect(t, g0.cols == 3)
     testing.expect(t, g0.data[0][0] == 0)
 
     // Value-init
-    g1: Grid(3, 3, u8) = create_grid_with_value(3, 3, u8, '.')
+    g1: Grid(3, 3, 0, u8) = create_grid_with_value(3, 3, 0, u8, '.')
     testing.expect(t, g1.data[1][1] == '.')
 
     // Accessors
@@ -307,10 +316,6 @@ test_grid :: proc(t: ^testing.T) {
     ok = set_pos(&g1, {1, 1}, '#')
     testing.expect(t, g1.data[1][1] == '#')
 
-    // Neighbors
-    nbs, ok_n := neighbors(g1, 1, 1, true)
-    // fmt.eprintln(nbs)
-    testing.expect(t, ok_n && len(nbs) == 8)
 
     // Display
     // fmt.eprintln("\nbasic show:")
@@ -325,7 +330,7 @@ test_grid :: proc(t: ^testing.T) {
 @(test)
 test_grid_create_grid_from_slice :: proc(t: ^testing.T) {
     s: [][]u16 = {{1, 2, 3}, {4, 5, 6}}
-    g := create_grid_from_slice(2, 3, u16, s)
+    g := create_grid_from_slice(2, 3, 0, u16, s)
     testing.expect(t, g.rows == 2)
     testing.expect(t, g.cols == 3)
     testing.expect(t, g.data[0][0] == 1)
@@ -334,10 +339,34 @@ test_grid_create_grid_from_slice :: proc(t: ^testing.T) {
 @(test)
 test_grid_create_grid_from_bytes :: proc(t: ^testing.T) {
     s: []u8 = {'.', '#', '.', '\n', '.', '.', '.'}
-    g := create_grid_from_bytes(2, 3, u8, s)
+    g := create_grid_from_bytes(2, 3, 0, u8, s)
     testing.expect(t, g.rows == 2)
     testing.expect(t, g.cols == 3)
     testing.expect(t, g.data[0][1] == '#')
+
+    g1 := create_grid_from_bytes(2, 3, 1, u8, s)
+    // log.info(lib.dbg(show_pretty_char(g1)))
+}
+
+@(test)
+test_grid_padding :: proc(t: ^testing.T) {
+    g0 := create_grid(2, 3, 2, i32)
+    testing.expect(t, g0.rows == 6)
+    testing.expect(t, g0.cols == 7)
+
+    g1 := create_grid_with_value(3, 3, 1, u8, '.')
+    testing.expect(t, g1.rows == 5)
+    testing.expect(t, g1.cols == 5)
+    testing.expect(t, g1.data[1][1] == '.')
+
+    s: []u8 = {'.', '#', '.', '\n', '.', '.', '.'}
+    g := create_grid_from_bytes(2, 3, 1, u8, s)
+    testing.expect(t, g.rows == 4)
+    testing.expect(t, g.cols == 5)
+    testing.expect(t, g.data[1][1] == '.')
+    testing.expect(t, g.data[1][2] == '#')
+
+
 }
 
 @(test)
@@ -345,4 +374,13 @@ test_neighbors_8 :: proc(t: ^testing.T) {
     expected: [8]Pos = {{0, 1}, {2, 1}, {1, 0}, {1, 2}, {0, 0}, {0, 2}, {2, 0}, {2, 2}}
     ns8 := neighbors_8({1, 1})
     testing.expect(t, ns8 == expected)
+}
+
+@(test)
+test_usafe :: proc(t: ^testing.T) {
+    s: []u8 = {'.', '#', '.', '\n', '.', '.', '.'}
+    g := create_grid_from_bytes(2, 3, 0, u8, s)
+    testing.expect(t, unsafe_get_pos(g, {0, 1}) == '#')
+    unsafe_set_pos(&g, {0, 1}, '$')
+    testing.expect(t, unsafe_get_pos(g, {0, 1}) == '$')
 }
