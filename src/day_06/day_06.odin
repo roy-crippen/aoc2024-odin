@@ -4,25 +4,32 @@ import "../lib"
 import gr "../lib/grid"
 import sa "core:container/small_array"
 import "core:fmt"
-// import "core:log"
+import "core:log"
 // import "core:slice"
 import "core:testing"
 // import "core:time"
 import ba "core:container/bit_array"
 
-INPUT :: #load("day_06.txt", []u8)
-EXAMPLE_INPUT :: #load("example.txt", []u8)
+EXAMPLE :: false
+when EXAMPLE {
+    N :: 10
+    INPUT :: #load("example.txt", []u8)
+    EXPECTED_PART1 :: 41
+    EXPECTED_PART2 :: 6
+} else {
+    N :: 130
+    INPUT :: #load("day_06.txt", []u8)
+    EXPECTED_PART1 :: 5329
+    EXPECTED_PART2 :: 2162
+}
 
-N :: 130
-// N :: 10
 BORDER_CHAR: byte = '$'
 GUARD_CHAR: byte = '#'
 
 State :: struct {
-    r:    int,
-    c:    int,
-    cols: int,
-    dir:  Dir,
+    r:   int,
+    c:   int,
+    dir: Dir,
 }
 
 Dir :: enum {
@@ -48,7 +55,7 @@ next_dr_dc_dir :: proc "contextless" (dir: Dir) -> (int, int, Dir) {
 
 // for part 2
 rc_dir_to_idx :: #force_inline proc "contextless" (st: State) -> u64 {
-    return u64((st.r * st.cols + st.c) * 4 + int(st.dir))
+    return u64((st.r * N + st.c) * 4 + int(st.dir))
 }
 
 simulate_guard_path :: proc(
@@ -59,17 +66,16 @@ simulate_guard_path :: proc(
     unique_count: u64,
 ) {
     // setup visited bit array
-    get_key := #force_inline proc "contextless" (st: State) -> int { return st.r * st.cols + st.c }
+    get_key := #force_inline proc "contextless" (st: State) -> int { return st.r * N + st.c }
     visited: ba.Bit_Array
     _ = ba.init(&visited, max_index = (N + 2) * (N + 2), min_index = 0)
     defer ba.destroy(&visited)
 
     // initialize simulation
     st := State {
-        r    = start_r,
-        c    = start_c,
-        cols = g.cols,
-        dir  = .N,
+        r   = start_r,
+        c   = start_c,
+        dir = .N,
     }
     key := get_key(st)
     ba.unsafe_set(&visited, key)
@@ -103,7 +109,6 @@ simulate_guard_path :: proc(
 solution := lib.Solution {
     day            = 06,
     input          = INPUT,
-    // input          = EXAMPLE_INPUT,
     part1          = part1,
     part2          = part2,
     expected_part1 = 5329,
@@ -118,8 +123,6 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-
-
     result = 42
     return solution.expected_part2
 }
@@ -128,30 +131,40 @@ part2 :: proc(s: []u8) -> (result: u64) {
    tests -----------------------------
 */
 
-// @(test)
-// test_example_part1 :: proc(t: ^testing.T) {
-//     p1_example := part1(EXAMPLE_INPUT)
-//     expected: u64 = 41
-//     testing.expect(t, p1_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p1_example))
-// }
+when EXAMPLE {
+    @(test)
+    test_part1 :: proc(t: ^testing.T) {
+        s := fmt.tprintf(
+            "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
+            EXAMPLE,
+            EXPECTED_PART1,
+            EXPECTED_PART2,
+        )
+        log.info(s)
+        p1 := part1(INPUT)
+        testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
+    }
 
-@(test)
-test_part1 :: proc(t: ^testing.T) {
-    p1 := part1(INPUT)
-    expected := solution.expected_part1
-    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
+    @(test)
+    test_example_part2 :: proc(t: ^testing.T) {
+        p2_example := part2(INPUT)
+        testing.expect(
+            t,
+            p2_example == EXPECTED_PART2,
+            fmt.tprintf("Expected result %d, got %d", EXPECTED_PART2, p2_example),
+        )
+    }
+} else {
+    @(test)
+    test_part1 :: proc(t: ^testing.T) {
+        s := fmt.tprintf(
+            "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
+            EXAMPLE,
+            EXPECTED_PART1,
+            EXPECTED_PART2,
+        )
+        log.info(s)
+        p1 := part1(INPUT)
+        testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
+    }
 }
-
-// @(test)
-// test_example_part2 :: proc(t: ^testing.T) {
-//     p2_example := part2(EXAMPLE_INPUT)
-//     expected: u64 = 42
-//     testing.expect(t, p2_example == expected, fmt.tprintf("Expected result %d, got %d", expected, p2_example))
-// }
-
-// @(test)
-// test_part2 :: proc(t: ^testing.T) {
-//     p2 := part2(INPUT)
-//     expected := solution.expected_part2
-//     testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
-// }
