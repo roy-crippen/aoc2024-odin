@@ -4,7 +4,7 @@ import "../lib"
 import gr "../lib/grid"
 import sa "core:container/small_array"
 import "core:fmt"
-import "core:log"
+// import "core:log"
 // import "core:slice"
 import "core:testing"
 // import "core:time"
@@ -134,13 +134,13 @@ part2 :: proc(s: []u8) -> (result: u64) {
 when EXAMPLE {
     @(test)
     test_part1 :: proc(t: ^testing.T) {
-        s := fmt.tprintf(
-            "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
-            EXAMPLE,
-            EXPECTED_PART1,
-            EXPECTED_PART2,
-        )
-        log.info(s)
+        // s := fmt.tprintf(
+        //     "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
+        //     EXAMPLE,
+        //     EXPECTED_PART1,
+        //     EXPECTED_PART2,
+        // )
+        // log.info(s)
         p1 := part1(INPUT)
         testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
     }
@@ -157,13 +157,13 @@ when EXAMPLE {
 } else {
     @(test)
     test_part1 :: proc(t: ^testing.T) {
-        s := fmt.tprintf(
-            "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
-            EXAMPLE,
-            EXPECTED_PART1,
-            EXPECTED_PART2,
-        )
-        log.info(s)
+        // s := fmt.tprintf(
+        //     "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
+        //     EXAMPLE,
+        //     EXPECTED_PART1,
+        //     EXPECTED_PART2,
+        // )
+        // log.info(s)
         p1 := part1(INPUT)
         testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
     }
