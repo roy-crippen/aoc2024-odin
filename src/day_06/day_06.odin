@@ -9,6 +9,10 @@ import "core:fmt"
 import "core:testing"
 // import "core:time"
 import ba "core:container/bit_array"
+import "core:os"
+// import "core:sync"
+// import "core:mem"
+import "core:thread"
 
 EXAMPLE :: false
 when EXAMPLE {
@@ -40,7 +44,7 @@ Dir :: enum {
 }
 
 next_dr_dc_dir :: proc "contextless" (dir: Dir) -> (int, int, Dir) {
-    #partial switch dir {
+    switch dir {
     case .N:
         return 0, 1, .E
     case .E:
@@ -50,17 +54,13 @@ next_dr_dc_dir :: proc "contextless" (dir: Dir) -> (int, int, Dir) {
     case .W:
         return -1, 0, .N
     }
-    return 0, 0, dir // error, no change
-}
-
-// for part 2
-rc_dir_to_idx :: #force_inline proc "contextless" (st: State) -> u64 {
-    return u64((st.r * N + st.c) * 4 + int(st.dir))
+    return 0, 0, dir // error
 }
 
 simulate_guard_path :: proc(
     g: ^gr.Grid(N, N, 1, byte),
     start_r, start_c: int,
+    is_part2 := false,
 ) -> (
     route: sa.Small_Array(6000, State),
     unique_count: u64,
@@ -82,7 +82,8 @@ simulate_guard_path :: proc(
     next_v: byte
     dr, dc := -1, 0 // North
     unique_count = 1
-    sa.push_back(&route, st)
+    if is_part2 { sa.push_back(&route, st) }
+
 
     // simulate
     for {
@@ -96,14 +97,69 @@ simulate_guard_path :: proc(
         }
         st.r = nr
         st.c = nc
-        sa.push_back(&route, st)
         key = get_key(st)
         if !ba.unsafe_get(&visited, key) {
             ba.unsafe_set(&visited, key)
             unique_count += 1
+
+            // for part2 store the first occurance of position (with direction)
+            if is_part2 { sa.push_back(&route, st) }
         }
     }
     return
+}
+
+current_dr_dc :: proc "contextless" (dir: Dir) -> (int, int) {
+    switch dir {
+    case .N:
+        return -1, 0
+    case .E:
+        return 0, 1
+    case .S:
+        return 1, 0
+    case .W:
+        return 0, -1
+    }
+    return 0, 0 // error
+}
+
+rc_dir_to_idx :: #force_inline proc "contextless" (st: State) -> int {
+    return (st.r * N + st.c) * 4 + int(st.dir)
+}
+
+// checks if adding one new guard at `curr_st` creates a loop, thread safe
+is_loop :: proc(states: [2]State) -> u64 {
+    st := states[0]
+    g := gr.create_grid_from_bytes(N, N, 1, byte, INPUT, pad_val = '$')
+    gr.unsafe_set(&g, states[1].r, states[1].c, '#')
+
+    visited: ba.Bit_Array
+    _ = ba.init(&visited, max_index = (N + 2) * (N + 2) * 4, min_index = 0)
+    defer ba.destroy(&visited)
+    key := rc_dir_to_idx(st)
+    ba.unsafe_set(&visited, key)
+    next_v: byte
+    dr, dc := current_dr_dc(st.dir)
+
+    for {
+        nr := st.r + dr
+        nc := st.c + dc
+        next_v = gr.unsafe_get(&g, nr, nc)
+        if next_v == BORDER_CHAR {
+            return 0
+        } // no loop
+        if next_v == GUARD_CHAR {
+            dr, dc, st.dir = next_dr_dc_dir(st.dir)
+            continue
+        }
+        st.r = nr
+        st.c = nc
+        key = rc_dir_to_idx(st)
+        if ba.unsafe_get(&visited, key) {
+            return 1
+        } // loop found
+        ba.unsafe_set(&visited, key)
+    }
 }
 
 solution := lib.Solution {
@@ -111,8 +167,8 @@ solution := lib.Solution {
     input          = INPUT,
     part1          = part1,
     part2          = part2,
-    expected_part1 = 5329,
-    expected_part2 = 2162,
+    expected_part1 = EXPECTED_PART1,
+    expected_part2 = EXPECTED_PART2,
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
@@ -123,48 +179,65 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = 42
-    return solution.expected_part2
+    /*
+    // sequential solution
+    for i in 0 ..< len(route) - 1 {
+        result += is_loop({route[i], route[i + 1]})
+    }
+    */
+
+    Loop_Task :: struct {
+        grid:   ^gr.Grid(N, N, 1, byte),
+        states: [2]State,
+        result: ^u64, // pointer to store the result
+    }
+
+    worker :: proc(task: thread.Task) {
+        data := cast(^Loop_Task)task.data
+        data.result^ = is_loop(data.states)
+    }
+
+    g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
+    start_pos, _ := gr.find_first_position(&g, '^')
+    sa_route, _ := simulate_guard_path(&g, start_pos[0], start_pos[1], is_part2 = true)
+    route := sa.slice(&sa_route)
+    task_len := len(route) - 1
+
+    pool: thread.Pool
+    thread.pool_init(&pool, context.allocator, os.processor_core_count() - 1)
+    thread.pool_start(&pool)
+    defer thread.pool_destroy(&pool)
+
+    results := make_slice([]u64, task_len)
+    tasks := make_slice([]Loop_Task, task_len)
+    defer delete_slice(results)
+    defer delete_slice(tasks)
+
+    for i in 0 ..< len(route) - 1 {
+        tasks[i] = Loop_Task {
+            states = {route[i], route[i + 1]},
+            result = &results[i],
+        }
+        thread.pool_add_task(&pool, context.allocator, worker, &tasks[i])
+    }
+
+    thread.pool_finish(&pool)
+    for r in results { result += r }
+    return
 }
 
 /*
    tests -----------------------------
 */
 
-when EXAMPLE {
-    @(test)
-    test_part1 :: proc(t: ^testing.T) {
-        // s := fmt.tprintf(
-        //     "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
-        //     EXAMPLE,
-        //     EXPECTED_PART1,
-        //     EXPECTED_PART2,
-        // )
-        // log.info(s)
-        p1 := part1(INPUT)
-        testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
-    }
+@(test)
+test_part1 :: proc(t: ^testing.T) {
+    p1 := part1(INPUT)
+    testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
+}
 
-    @(test)
-    test_example_part2 :: proc(t: ^testing.T) {
-        p2_example := part2(INPUT)
-        testing.expect(
-            t,
-            p2_example == EXPECTED_PART2,
-            fmt.tprintf("Expected result %d, got %d", EXPECTED_PART2, p2_example),
-        )
-    }
-} else {
-    @(test)
-    test_part1 :: proc(t: ^testing.T) {
-        // s := fmt.tprintf(
-        //     "example: %v, EXPECTED_PART1: %d, EXPECTED_PART2: %d",
-        //     EXAMPLE,
-        //     EXPECTED_PART1,
-        //     EXPECTED_PART2,
-        // )
-        // log.info(s)
-        p1 := part1(INPUT)
-        testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
-    }
+@(test)
+test_part2 :: proc(t: ^testing.T) {
+    p2 := part2(INPUT)
+    testing.expect(t, p2 == EXPECTED_PART2, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART2, p2))
 }
