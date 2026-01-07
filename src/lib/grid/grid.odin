@@ -127,7 +127,7 @@ unsafe_get_pos :: #force_inline proc "contextless" (g: Grid($R, $C, $P, $T), pos
     return g.data[pos[0]][pos[1]]
 }
 
-unsafe_get :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), r, c: int) -> T {
+unsafe_get :: #force_inline proc "contextless" (g: Grid($R, $C, $P, $T), r, c: int) -> T {
     return g.data[r][c]
 }
 
