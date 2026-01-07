@@ -2,16 +2,10 @@ package day_06
 
 import "../lib"
 import gr "../lib/grid"
-import sa "core:container/small_array"
-import "core:fmt"
-// import "core:log"
-// import "core:slice"
-import "core:testing"
-// import "core:time"
 import ba "core:container/bit_array"
+import "core:fmt"
 import "core:os"
-// import "core:sync"
-// import "core:mem"
+import "core:testing"
 import "core:thread"
 
 EXAMPLE :: false
@@ -63,14 +57,13 @@ simulate_guard_path :: proc(
     start_r, start_c: int,
     is_part2 := false,
 ) -> (
-    route: sa.Small_Array(6000, State),
+    route: [dynamic]State,
     unique_count: u64,
 ) {
     // setup visited bit array
     get_key := #force_inline proc "contextless" (st: State) -> int { return st.r * N + st.c }
     visited: ba.Bit_Array
     _ = ba.init(&visited, max_index = (N + 2) * (N + 2), min_index = 0)
-    defer ba.destroy(&visited)
 
     // initialize simulation
     st := State {
@@ -83,7 +76,7 @@ simulate_guard_path :: proc(
     next_v: byte
     dr, dc := -1, 0 // North
     unique_count = 1
-    if is_part2 { sa.push_back(&route, st) }
+    if is_part2 { append(&route, st) }
 
 
     // simulate
@@ -104,7 +97,7 @@ simulate_guard_path :: proc(
             unique_count += 1
 
             // for part2 store the first occurance of position (with direction)
-            if is_part2 { sa.push_back(&route, st) }
+            if is_part2 { append(&route, st) }
         }
     }
     return
@@ -135,7 +128,6 @@ is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u64 {
 
     visited: ba.Bit_Array
     _ = ba.init(&visited, max_index = (N + 2) * (N + 2) * 4, min_index = 0, allocator = context.temp_allocator)
-    defer ba.destroy(&visited)
     key := rc_dir_to_idx(st)
     ba.unsafe_set(&visited, key)
     next_v: byte
@@ -189,19 +181,15 @@ part2 :: proc(s: []u8) -> (result: u64) {
 
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
     start_pos, _ := gr.find_first_position(&g, '^')
-    sa_route, _ := simulate_guard_path(&g, start_pos[0], start_pos[1], is_part2 = true)
-    route := sa.slice(&sa_route)
+    route, _ := simulate_guard_path(&g, start_pos[0], start_pos[1], is_part2 = true)
     task_len := len(route) - 1
 
     pool: thread.Pool
     thread.pool_init(&pool, context.allocator, os.processor_core_count() / 2 - 1)
     thread.pool_start(&pool)
-    defer thread.pool_destroy(&pool)
 
     results := make_slice([]u64, task_len)
     tasks := make_slice([]Loop_Task, task_len)
-    defer delete_slice(results)
-    defer delete_slice(tasks)
 
     for i in 0 ..< len(route) - 1 {
         tasks[i] = Loop_Task {
@@ -209,7 +197,7 @@ part2 :: proc(s: []u8) -> (result: u64) {
             states = {route[i], route[i + 1]},
             result = &results[i],
         }
-        thread.pool_add_task(&pool, context.temp_allocator, worker, &tasks[i])
+        thread.pool_add_task(&pool, context.allocator, worker, &tasks[i])
     }
 
     thread.pool_finish(&pool)
