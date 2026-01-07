@@ -17,7 +17,7 @@ solution := lib.Solution {
     expected_part2 = 1850,
 }
 
-cross_xmas :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos) -> u64 {
+cross_xmas :: proc "contextless" (g: gr.Grid(N, N, 0, byte), pos: gr.Pos) -> u64 {
     // nw and se
     nw, nw_ok := gr.get_pos(g, gr.north_west(pos))
     if !nw_ok { return 0 }
@@ -36,7 +36,7 @@ cross_xmas :: proc "contextless" (g: gr.Grid(N, N, byte), pos: gr.Pos) -> u64 {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    g := gr.create_grid_from_bytes(N, N, byte, s)
+    g := gr.create_grid_from_bytes(N, N, 0, byte, s)
     mas: [3]u8 = {'M', 'A', 'S'}
     d8: [8]gr.Pos = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
@@ -68,7 +68,7 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    g := gr.create_grid_from_bytes(N, N, byte, s)
+    g := gr.create_grid_from_bytes(N, N, 0, byte, s)
 
     pos: gr.Pos
     for r in 0 ..< N {
