@@ -39,26 +39,37 @@ cross_xmas :: proc "contextless" (g: gr.Grid(N, N, 0, byte), pos: gr.Pos) -> u64
 
 part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, PAD_CNT, byte, s, pad_val = BORDER_CHAR)
-    mas: [3]u8 = {'M', 'A', 'S'}
-    d8: [8]gr.Pos = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
-    j, dr, dc: int
-    failed: bool
+    // Flatten safely: pointer to first element + full size
+    flat := ([^]byte)(&g.data[0][0])[:g.rows * g.cols]
+    stride_row := g.cols // int is fine
+
+    // Precompute direction strides (delta in flat index)
+    d8_strides: [8]int = {
+        -stride_row - 1, // NW
+        -stride_row, // N
+        -stride_row + 1, // NE
+        -1, // W
+        +1, // E
+        +stride_row - 1, // SW
+        +stride_row, // S
+        +stride_row + 1, // SE
+    }
+
     for r in PAD_CNT ..< N - PAD_CNT {
+        row_base := r * stride_row
         for c in PAD_CNT ..< N - PAD_CNT {
-            ch := gr.unsafe_get(g, r, c)
-            if ch == 'X' {
-                for d in d8 {
-                    failed = false
-                    for test_val, i in mas {
-                        dr, dc = d[0], d[1]
-                        j = i + 1
-                        if test_val != gr.unsafe_get(g, r + (dr * j), c + (dc * j)) {
-                            failed = true
-                            break
-                        }
-                    }
-                    if !failed { result += 1 }
+            idx := row_base + c
+            if flat[idx] != 'X' { continue }
+
+            for stride in d8_strides {
+                // Unrolled checks for 'M','A','S' at +1,+2,+3 multiples
+                idx1 := idx + stride * 1
+                idx2 := idx + stride * 2
+                idx3 := idx + stride * 3
+
+                if flat[idx1] == 'M' && flat[idx2] == 'A' && flat[idx3] == 'S' {
+                    result += 1
                 }
             }
         }
@@ -66,6 +77,7 @@ part1 :: proc(s: []u8) -> (result: u64) {
 
     return
 }
+
 
 part2 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, 0, byte, s)
