@@ -1,10 +1,6 @@
 package lib_grid
 
-// import "../../lib"
-// import sa "core:container/small_array"
-// import "core:fmt"
-// import "core:log"
-// import "core:strings"
+import "core:mem"
 import "core:testing"
 
 // Grid: R=rows, C=cols, P=padding_count, T=grid_ty
@@ -44,39 +40,20 @@ create_grid :: proc "contextless" ($R, $C, $P: int, $T: typeid) -> Grid(R, C, P,
 // Creates a grid filled with the given value
 create_grid_with_value :: proc "contextless" ($R, $C, $P: int, $T: typeid, value: T) -> Grid(R, C, P, T) {
     g := create_grid(R, C, P, T)
-    for &row in g.data {
-        for &cell in row {
-            cell = value
-        }
-    }
+    mem.set(&g.data[0][0], transmute(u8)value, g.rows * g.cols)
     return g
 }
 
 // Creates a grid from slice 's' of type []byte
 // Assumes each row is separated by '\n'
 create_grid_from_bytes :: proc($R, $C, $P: int, $T: typeid, s: []u8, pad_val: u8 = '#') -> Grid(R, C, P, T) {
-    g := create_grid(R, C, P, u8)
-    // pad first and last P rows
-    for i in 0 ..< g.pad_cnt {
-        for j in 0 ..< g.cols {
-            g.data[i][j] = pad_val
-            g.data[g.rows - i - 1][j] = pad_val
-        }
-    }
+    // init whole grid with pad_val (fast bulk fill)
+    g := create_grid_with_value(R, C, P, u8, pad_val)
 
-    // pad first and last P cols
-    for j in 0 ..< g.pad_cnt {
-        for i in g.pad_cnt ..< g.rows - g.pad_cnt {
-            g.data[i][j] = pad_val
-            g.data[i][g.cols - j - 1] = pad_val
-        }
-    }
-
+    // overwrite inner grid only
     r, c: int = g.pad_cnt, g.pad_cnt
     for value in s {
         if value == '\n' {
-            // assert(c == g.cols, "grid is not rectangular")
-
             c = g.pad_cnt
             r += 1
             continue
