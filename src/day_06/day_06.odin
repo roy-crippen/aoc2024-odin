@@ -42,7 +42,7 @@ Dir :: enum {
     W,
 }
 
-next_dr_dc_dir :: proc "contextless" (dir: Dir) -> (int, int, Dir) {
+next_dr_dc_dir :: #force_inline proc "contextless" (dir: Dir) -> (int, int, Dir) {
     switch dir {
     case .N:
         return 0, 1, .E
@@ -134,13 +134,14 @@ is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
     _ = ba.init(&visited, max_index = (N + 2) * (N + 2) * 4, min_index = 0, allocator = context.temp_allocator)
     key := rc_dir_to_idx(st)
     ba.unsafe_set(&visited, key)
-    next_v: byte
-    dr, dc := current_dr_dc(st.dir)
 
+    next_v: byte
+    nr, nc: int
+    dr, dc := current_dr_dc(st.dir)
     for {
-        nr := st.r + dr
-        nc := st.c + dc
-        next_v = GUARD_CHAR if nr == new_guard_r && nc == new_guard_c else gr.unsafe_get(g^, nr, nc)
+        nr = st.r + dr
+        nc = st.c + dc
+        next_v = GUARD_CHAR if nc == new_guard_c && nr == new_guard_r else gr.unsafe_get(g^, nr, nc)
         if next_v == BORDER_CHAR { return 0 }     // no loop
         if next_v == GUARD_CHAR {
             dr, dc, st.dir = next_dr_dc_dir(st.dir)
@@ -149,8 +150,10 @@ is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
         st.r = nr
         st.c = nc
         key = rc_dir_to_idx(st)
-        if ba.unsafe_get(&visited, key) { return 1 }     // loop found
-        ba.unsafe_set(&visited, key)
+        #no_bounds_check {
+            if ba.unsafe_get(&visited, key) { return 1 }     // loop found
+            ba.unsafe_set(&visited, key)
+        }
     }
 }
 
