@@ -3,7 +3,7 @@ package lib_grid
 import "core:mem"
 import "core:testing"
 
-// Grid: R=rows, C=cols, P=padding_count, T=grid_ty
+// Grid: R=rows, C=cols, P=padding_count, T=grid_type
 Grid :: struct($R, $C, $P: int, $T: typeid) where R > 0 {
     data:    [R + 2 * P][C + 2 * P]T,
     rows:    int, // = R
