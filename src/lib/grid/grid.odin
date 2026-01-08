@@ -46,7 +46,12 @@ create_grid_with_value :: proc "contextless" ($R, $C, $P: int, $T: typeid, value
 
 // Creates a grid from slice 's' of type []byte
 // Assumes each row is separated by '\n'
-create_grid_from_bytes :: proc($R, $C, $P: int, $T: typeid, s: []u8, pad_val: u8 = '#') -> Grid(R, C, P, T) {
+create_grid_from_bytes :: proc "contextless" (
+    $R, $C, $P: int,
+    $T: typeid,
+    s: []u8,
+    pad_val: u8 = '#',
+) -> Grid(R, C, P, T) {
     // init whole grid with pad_val (fast bulk fill)
     g := create_grid_with_value(R, C, P, u8, pad_val)
 
@@ -66,14 +71,7 @@ create_grid_from_bytes :: proc($R, $C, $P: int, $T: typeid, s: []u8, pad_val: u8
 }
 
 // Creates a grid from slice 's' of type [][]T with padding size 0
-create_grid_from_slice :: proc($R, $C, $P: int, $T: typeid, s: [][]T) -> Grid(R, C, P, T) {
-    // validate R
-    rows := len(s)
-    assert(rows == R, "invalid input in call to create_grid")
-
-    // validate C
-    for &row in s { assert(len(row) == C, "grid is not rectangular") }
-
+create_grid_from_slice :: proc "contextless" ($R, $C, $P: int, $T: typeid, s: [][]T) -> Grid(R, C, P, T) {
     g := create_grid(R, C, P, T)
     for row, r in s {
         for value, c in row {
@@ -175,7 +173,7 @@ directions_cardinal := [4][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 directions_diagonal := [4][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 directions_all := [8][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 
-neighbors_8 :: proc(pos: Pos) -> (xs: [8]Pos) {
+neighbors_8 :: proc "contextless" (pos: Pos) -> (xs: [8]Pos) {
     r := pos[0]
     c := pos[1]
     for d, i in directions_all {
@@ -184,7 +182,7 @@ neighbors_8 :: proc(pos: Pos) -> (xs: [8]Pos) {
     return
 }
 
-find_first_position :: proc(g: ^Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok: bool) {
+find_first_position :: proc(g: Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok: bool) {
     for row, r in g.data {
         for val, c in row {
             if val == v {
