@@ -5,6 +5,7 @@ import gr "../lib/grid"
 import ba "core:container/bit_array"
 import "core:fmt"
 import "core:os"
+import "core:sync"
 import "core:testing"
 import "core:thread"
 
@@ -23,6 +24,9 @@ when EXAMPLE {
 
 BORDER_CHAR: byte = '$'
 GUARD_CHAR: byte = '#'
+
+// package scoped counter for part 2 thread pool using atomic add
+loop_counter: u16
 
 State :: struct {
     r:   int,
@@ -122,7 +126,7 @@ rc_dir_to_idx :: #force_inline proc "contextless" (st: State) -> int {
 }
 
 // checks if adding one new guard at `curr_st` creates a loop, thread safe
-is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u64 {
+is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
     st := states[0]
     new_guard_r, new_guard_c := states[1].r, states[1].c
 
@@ -171,12 +175,11 @@ part2 :: proc(s: []u8) -> (result: u64) {
     Loop_Task :: struct {
         grid:   ^gr.Grid(N, N, 1, byte),
         states: [2]State,
-        result: ^u64, // pointer to store the result
     }
 
     worker :: proc(task: thread.Task) {
         data := cast(^Loop_Task)task.data
-        data.result^ = is_loop(data.grid, data.states)
+        sync.atomic_add(&loop_counter, is_loop(data.grid, data.states))
     }
 
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
@@ -185,24 +188,21 @@ part2 :: proc(s: []u8) -> (result: u64) {
     task_len := len(route) - 1
 
     pool: thread.Pool
-    thread.pool_init(&pool, context.allocator, os.processor_core_count() / 2 - 1)
+    thread.pool_init(&pool, context.allocator, os.processor_core_count() / 2)
     thread.pool_start(&pool)
 
-    results := make_slice([]u64, task_len)
     tasks := make_slice([]Loop_Task, task_len)
-
     for i in 0 ..< len(route) - 1 {
         tasks[i] = Loop_Task {
             grid   = &g,
             states = {route[i], route[i + 1]},
-            result = &results[i],
         }
         thread.pool_add_task(&pool, context.allocator, worker, &tasks[i])
     }
 
     thread.pool_finish(&pool)
-    for r in results { result += r }
-    return
+    return u64(loop_counter)
+
 }
 
 /*
