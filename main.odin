@@ -18,7 +18,7 @@ ARENA_SIZE :: 2 * 1024 * 1024 // 2 MiB
 log_allocator :: proc(day: u8, a: ^va.Arena) -> string {
     used_kib := a.total_used / 1024
     used_percent := f64(a.total_used) / f64(ARENA_SIZE) * 100
-    return fmt.tprintf("  day: %2d, allocations: % 7d KiB (%.1f%%)", day, used_kib, used_percent)
+    return fmt.tprintf("  day: %2d, allocations: % 7d KiB (% 4.1f%%)", day, used_kib, used_percent)
 }
 
 main :: proc() {
