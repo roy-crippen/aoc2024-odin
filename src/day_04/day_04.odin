@@ -6,7 +6,9 @@ import "core:fmt"
 import "core:testing"
 
 INPUT :: #load("day_04.txt", []u8)
-N :: 140
+PAD_CNT :: 3
+N :: 140 + (2 * PAD_CNT)
+BORDER_CHAR: byte = '$'
 
 solution := lib.Solution {
     day            = 04,
@@ -36,24 +38,22 @@ cross_xmas :: proc "contextless" (g: gr.Grid(N, N, 0, byte), pos: gr.Pos) -> u64
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    g := gr.create_grid_from_bytes(N, N, 0, byte, s)
+    g := gr.create_grid_from_bytes(N, N, PAD_CNT, byte, s, pad_val = BORDER_CHAR)
     mas: [3]u8 = {'M', 'A', 'S'}
     d8: [8]gr.Pos = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}}
 
-    pos: gr.Pos
-    for r in 0 ..< N {
-        for c in 0 ..< N {
-            pos = {r, c}
-            ch, ok := gr.get_pos(g, pos)
-            if ok && ch == 'X' {
+    j, dr, dc: int
+    failed: bool
+    for r in PAD_CNT ..< N - PAD_CNT {
+        for c in PAD_CNT ..< N - PAD_CNT {
+            ch := gr.unsafe_get(g, r, c)
+            if ch == 'X' {
                 for d in d8 {
-                    failed := false
+                    failed = false
                     for test_val, i in mas {
-                        dr, dc := d[0], d[1]
-                        j := i + 1
-                        move_pos: gr.Pos = {r + (dr * j), c + (dc * j)}
-                        val, found := gr.get_pos(g, move_pos)
-                        if !found || val != test_val {
+                        dr, dc = d[0], d[1]
+                        j = i + 1
+                        if test_val != gr.unsafe_get(g, r + (dr * j), c + (dc * j)) {
                             failed = true
                             break
                         }
