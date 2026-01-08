@@ -25,7 +25,7 @@ when EXAMPLE {
 BORDER_CHAR: byte = '$'
 GUARD_CHAR: byte = '#'
 
-// package scoped counter for part 2 thread pool using atomic add
+// package scoped variables
 loop_counter: u16
 
 State :: struct {
@@ -57,7 +57,7 @@ next_dr_dc_dir :: #force_inline proc "contextless" (dir: Dir) -> (int, int, Dir)
 }
 
 simulate_guard_path :: proc(
-    g: ^gr.Grid(N, N, 1, byte),
+    g: gr.Grid(N, N, 1, byte),
     start_r, start_c: int,
     is_part2 := false,
 ) -> (
@@ -87,7 +87,7 @@ simulate_guard_path :: proc(
     for {
         nr := st.r + dr
         nc := st.c + dc
-        next_v = gr.unsafe_get(g^, nr, nc)
+        next_v = gr.unsafe_get(g, nr, nc)
         if next_v == BORDER_CHAR { break }     // done
         if next_v == GUARD_CHAR {
             dr, dc, st.dir = next_dr_dc_dir(st.dir)
@@ -126,7 +126,7 @@ rc_dir_to_idx :: #force_inline proc "contextless" (st: State) -> int {
 }
 
 // checks if adding one new guard at `curr_st` creates a loop, thread safe
-is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
+is_loop :: proc(g: gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
     st := states[0]
     new_guard_r, new_guard_c := states[1].r, states[1].c
 
@@ -141,7 +141,7 @@ is_loop :: proc(g: ^gr.Grid(N, N, 1, byte), states: [2]State) -> u16 {
     for {
         nr = st.r + dr
         nc = st.c + dc
-        next_v = GUARD_CHAR if nc == new_guard_c && nr == new_guard_r else gr.unsafe_get(g^, nr, nc)
+        next_v = GUARD_CHAR if nc == new_guard_c && nr == new_guard_r else gr.unsafe_get(g, nr, nc)
         if next_v == BORDER_CHAR { return 0 }     // no loop
         if next_v == GUARD_CHAR {
             dr, dc, st.dir = next_dr_dc_dir(st.dir)
@@ -168,8 +168,8 @@ solution := lib.Solution {
 
 part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
-    start_pos, _ := gr.find_first_position(&g, '^')
-    _, unique_count := simulate_guard_path(&g, start_pos[0], start_pos[1])
+    start_pos, _ := gr.find_first_position(g, '^')
+    _, unique_count := simulate_guard_path(g, start_pos[0], start_pos[1])
     return unique_count
 }
 
@@ -182,12 +182,12 @@ part2 :: proc(s: []u8) -> (result: u64) {
 
     worker :: proc(task: thread.Task) {
         data := cast(^Loop_Task)task.data
-        sync.atomic_add(&loop_counter, is_loop(data.grid, data.states))
+        sync.atomic_add(&loop_counter, is_loop(data.grid^, data.states))
     }
 
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
-    start_pos, _ := gr.find_first_position(&g, '^')
-    route, _ := simulate_guard_path(&g, start_pos[0], start_pos[1], is_part2 = true)
+    start_pos, _ := gr.find_first_position(g, '^')
+    route, _ := simulate_guard_path(g, start_pos[0], start_pos[1], is_part2 = true)
     task_len := len(route) - 1
 
     pool: thread.Pool
@@ -204,6 +204,7 @@ part2 :: proc(s: []u8) -> (result: u64) {
     }
 
     thread.pool_finish(&pool)
+    thread.pool_destroy(&pool)
     return u64(loop_counter)
 
 }
@@ -214,12 +215,14 @@ part2 :: proc(s: []u8) -> (result: u64) {
 
 @(test)
 test_part1 :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
     p1 := part1(INPUT)
     testing.expect(t, p1 == EXPECTED_PART1, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART1, p1))
 }
 
 @(test)
 test_part2 :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
     p2 := part2(INPUT)
     testing.expect(t, p2 == EXPECTED_PART2, fmt.tprintf("Expected result %d, got %d", EXPECTED_PART2, p2))
 }
