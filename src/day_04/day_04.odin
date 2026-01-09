@@ -19,20 +19,16 @@ solution := lib.Solution {
     expected_part2 = 1850,
 }
 
-cross_xmas :: proc "contextless" (g: gr.Grid(N, N, 0, byte), pos: gr.Pos) -> u64 {
+cross_xmas :: proc "contextless" (g: gr.Grid(N, N, PAD_CNT, byte), pos: gr.Pos) -> u64 {
     // nw and se
-    nw, nw_ok := gr.get_pos(g, gr.north_west(pos))
-    if !nw_ok { return 0 }
-    se, se_ok := gr.get_pos(g, gr.south_east(pos))
-    if !se_ok { return 0 }
+    nw := gr.unsafe_get_pos(g, gr.north_west(pos))
+    se := gr.unsafe_get_pos(g, gr.south_east(pos))
     nw_se_ok := (nw == 'M' && se == 'S') || (nw == 'S' && se == 'M')
     if !nw_se_ok { return 0 }
 
     // ne and sw
-    ne, ne_ok := gr.get_pos(g, gr.north_east(pos))
-    if !ne_ok { return 0 }
-    sw, sw_ok := gr.get_pos(g, gr.south_west(pos))
-    if !sw_ok { return 0 }
+    ne := gr.unsafe_get_pos(g, gr.north_east(pos))
+    sw := gr.unsafe_get_pos(g, gr.south_west(pos))
     ne_sw_ok := (ne == 'M' && sw == 'S') || (ne == 'S' && sw == 'M')
     if ne_sw_ok && nw_se_ok && ne_sw_ok { return 1 } else { return 0 }
 }
@@ -40,11 +36,11 @@ cross_xmas :: proc "contextless" (g: gr.Grid(N, N, 0, byte), pos: gr.Pos) -> u64
 part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, PAD_CNT, byte, s, pad_val = BORDER_CHAR)
 
-    // Flatten safely: pointer to first element + full size
+    // flatten grid
     flat := ([^]byte)(&g.data[0][0])[:g.rows * g.cols]
-    stride_row := g.cols // int is fine
+    stride_row := g.cols
 
-    // Precompute direction strides (delta in flat index)
+    // direction strides (delta in flat index)
     d8_strides: [8]int = {
         -stride_row - 1, // NW
         -stride_row, // N
@@ -56,21 +52,17 @@ part1 :: proc(s: []u8) -> (result: u64) {
         +stride_row + 1, // SE
     }
 
+    idx, row_base: int
     for r in PAD_CNT ..< N - PAD_CNT {
-        row_base := r * stride_row
+        row_base = r * stride_row
         for c in PAD_CNT ..< N - PAD_CNT {
-            idx := row_base + c
+            idx = row_base + c
             if flat[idx] != 'X' { continue }
 
             for stride in d8_strides {
-                // Unrolled checks for 'M','A','S' at +1,+2,+3 multiples
-                idx1 := idx + stride * 1
-                idx2 := idx + stride * 2
-                idx3 := idx + stride * 3
-
-                if flat[idx1] == 'M' && flat[idx2] == 'A' && flat[idx3] == 'S' {
-                    result += 1
-                }
+                if flat[idx + stride * 1] != 'M' { continue }
+                if flat[idx + stride * 2] != 'A' { continue }
+                if flat[idx + stride * 3] == 'S' { result += 1 }
             }
         }
     }
@@ -80,11 +72,11 @@ part1 :: proc(s: []u8) -> (result: u64) {
 
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    g := gr.create_grid_from_bytes(N, N, 0, byte, s)
+    g := gr.create_grid_from_bytes(N, N, PAD_CNT, byte, s, pad_val = BORDER_CHAR)
 
     pos: gr.Pos
-    for r in 0 ..< N {
-        for c in 0 ..< N {
+    for r in PAD_CNT ..< N - PAD_CNT {
+        for c in PAD_CNT ..< N - PAD_CNT {
             pos = {r, c}
             ch, ok := gr.get_pos(g, pos)
             if ok && ch == 'A' {
