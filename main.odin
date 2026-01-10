@@ -11,6 +11,7 @@ import "src/day_04"
 import "src/day_05"
 import "src/day_06"
 import "src/day_07"
+import "src/day_08"
 import "src/day_99"
 import "src/lib"
 
@@ -41,6 +42,7 @@ main :: proc() {
         day_05.solution,
         day_06.solution,
         day_07.solution,
+        day_08.solution,
         day_99.solution,
     }
 
