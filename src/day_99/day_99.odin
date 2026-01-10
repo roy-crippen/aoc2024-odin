@@ -26,12 +26,12 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    result = 42
+    result = EXPECTED_PART1
     return
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = 42
+    result = EXPECTED_PART2
     return
 }
 
