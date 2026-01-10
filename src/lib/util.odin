@@ -13,45 +13,50 @@ Solution :: struct {
     expected_part2: u64,
 }
 
-unsafe_string_to_int :: proc(s: string) -> (result: int) {
+unsafe_string_to_int :: proc "contextless" (s: string) -> (result: int) {
     for c in s { result = result * 10 + (int(c) - '0') }
     return
 }
 
-unsafe_string_to_u32 :: proc(s: string) -> (result: u32) {
+unsafe_string_to_u32 :: proc "contextless" (s: string) -> (result: u32) {
     for c in s { result = result * 10 + (u32(c) - '0') }
     return
 }
 
-unsafe_string_to_u16 :: proc(s: string) -> (result: u16) {
+unsafe_string_to_u64 :: proc "contextless" (s: string) -> (result: u64) {
+    for c in s { result = result * 10 + (u64(c) - '0') }
+    return
+}
+
+unsafe_string_to_u16 :: proc "contextless" (s: string) -> (result: u16) {
     for c in s { result = result * 10 + (u16(c) - '0') }
     return
 }
 
-unsafe_string_to_i32 :: #force_inline proc(s: string) -> (result: i32) {
+unsafe_string_to_i32 :: #force_inline proc "contextless" (s: string) -> (result: i32) {
     for c in s { result = result * 10 + (i32(c) - '0') }
     return
 }
 
-unsafe_slice_u8_to_int :: proc(s: []u8) -> (result: int) {
+unsafe_slice_u8_to_int :: proc "contextless" (s: []u8) -> (result: int) {
     for c in s { result = result * 10 + (int(c) - '0') }
     return
 }
 
-unsafe_slice_u8_to_u16 :: proc(s: []u8) -> (result: u16) {
+unsafe_slice_u8_to_u16 :: proc "contextless" (s: []u8) -> (result: u16) {
     for c in s { result = result * 10 + (u16(c) - '0') }
     return
 }
 
 
-unssafe_slice_u8_to_i32 :: proc(s: []u8) -> (result: i32) {
+unssafe_slice_u8_to_i32 :: proc "contextless" (s: []u8) -> (result: i32) {
     for c in s { result = result * 10 + (i32(c) - '0') }
     return
 }
 
 dbg :: proc(s: string) -> string { return strings.concatenate({"\n", s, "\n"}, context.temp_allocator) }
 
-pow :: proc(x, power: u64) -> (result: u64) {
+pow :: proc "contextless" (x, power: u64) -> (result: u64) {
     result = 1
     for _ in 0 ..< power do result *= x
     return
