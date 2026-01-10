@@ -54,7 +54,7 @@ main :: proc() {
         elapsed := time.duration_microseconds(time.diff(start, end))
         tot_time += elapsed
         if result == sol.expected_part1 {
-            fmt.printfln("day %2d part 1: % 12d, % 9.2fus", sol.day, result, elapsed)
+            fmt.printfln("day %2d part 1: % 16d, % 9.2fus", sol.day, result, elapsed)
         } else {
             fmt.printfln("ERROR day %2d part 1. got %d, expected %d", sol.day, result, sol.expected_part1)
         }
@@ -65,7 +65,7 @@ main :: proc() {
         elapsed = time.duration_microseconds(time.diff(start, end))
         tot_time += elapsed
         if result == sol.expected_part2 {
-            fmt.printfln("day %2d part 2: % 12d, % 9.2fus", sol.day, result, elapsed)
+            fmt.printfln("day %2d part 2: % 16d, % 9.2fus", sol.day, result, elapsed)
         } else {
             fmt.printfln("ERROR day %2d part 2. got %d, expected %d", sol.day, result, sol.expected_part2)
         }
