@@ -17,7 +17,7 @@ solution := lib.Solution {
     expected_part2 = 24_941_624,
 }
 
-parse :: proc(s: []u8) -> (xs: sa.Small_Array(1024, i32), ys: sa.Small_Array(1024, i32)) {
+parse :: proc "contextless" (s: []u8) -> (xs: sa.Small_Array(1024, i32), ys: sa.Small_Array(1024, i32)) {
     i: int
     for i < len(s) {
         if i < len(s) && s[i] == '\n' {
