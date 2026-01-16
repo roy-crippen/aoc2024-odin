@@ -1,41 +1,71 @@
 package day_09
 
 import "../lib"
-import "core:container/queue"
 import "core:fmt"
 import "core:testing"
 
 EXAMPLE :: false
 when EXAMPLE {
-    CAP :: 50
+    CAP :: 10
     INPUT :: #load("example.txt", []u8)
     EXPECTED_PART1 :: 1928
     EXPECTED_PART2 :: 2858
 } else {
-    CAP :: 100_000
+    CAP :: 10_000
     INPUT :: #load("day_09.txt", []u8)
     EXPECTED_PART1 :: 6310675819476
     EXPECTED_PART2 :: 6335972980679
 }
 
-make_disk :: proc(s: []u8) -> (disk: queue.Queue(int), blanks: [dynamic]int) {
-    queue.init(&disk, capacity = CAP)
-    x, fid: int
+File :: struct {
+    fid:  int,
+    pos:  int,
+    size: int,
+}
+
+Blank :: struct {
+    pos:  int,
+    size: int,
+}
+
+
+make_disk :: proc(s: []u8) -> ([]File, []Blank) {
+    files := make_dynamic_array_len_cap([dynamic]File, 0, CAP)
+    blanks := make_dynamic_array_len_cap([dynamic]Blank, 0, CAP)
+    x, fid, idx: int
+    file: File
+    blank: Blank
     for ch, i in s {
         x = int(ch) - '0'
+        if x == 0 { continue }
         if i % 2 == 0 {
-            for _ in 0 ..< x { queue.push_back(&disk, fid) }
+            file = File {
+                fid  = fid,
+                pos  = idx,
+                size = x,
+            }
+            append_elem(&files, file)
             fid += 1
         } else {
-            for _ in 0 ..< x { queue.push_back(&disk, -1) }
+            blank = Blank {
+                pos  = idx,
+                size = x,
+            }
+            append_elem(&blanks, blank)
         }
+        idx += x
     }
+    return files[:], blanks[:]
+}
 
-    for id, i in disk.data {
-        if id == -1 { append_elem(&blanks, i) }
-    }
+log_files :: proc(files: []File) {
+    fmt.println("\nfiles")
+    #reverse for file in files { fmt.printfln("  %v", file) }
+}
 
-    return
+log_blanks :: proc(blanks: []Blank) {
+    fmt.println("\nblanks")
+    for blank in blanks { fmt.printfln("  %v", blank) }
 }
 
 solution := lib.Solution {
@@ -48,24 +78,49 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    disk, blanks := make_disk(s)
-    for i in blanks {
-        for queue.back_ptr(&disk)^ == -1 { _ = queue.pop_back(&disk) }
-        if disk.len <= uint(i) { break }
-        disk.data[i] = queue.pop_back(&disk)
+    files, blanks := make_disk(s)
+    fmt.println(len(files), len(blanks))
+    // log_files(files)
+    // log_blanks(blanks)
+
+    blank: Blank
+    i, j: int
+    file_loop: for i = len(files) - 1; i > 0; i -= 1 {
+        for j < len(blanks) {
+            blank = blanks[j]
+            if blank.pos > files[i].pos { break file_loop }
+
+            if blank.size >= files[i].size {
+                for k in blank.pos ..< blank.pos + files[i].size { result += u64(files[i].fid * k) }
+                if blank.size == files[i].size {
+                    j += 1
+                    break
+                } else {
+                    blanks[j].pos = blank.pos + files[i].size
+                    blanks[j].size = blank.size - files[i].size
+                }
+                break
+            } else {
+                for k in blank.pos ..< blank.pos + blank.size { result += u64(files[i].fid * k) }
+                files[i].size = files[i].size - blank.size
+                j += 1
+            }
+        }
     }
 
-    total: int
-    for i in 0 ..< int(disk.len) {
-        total += i * disk.data[i]
+    for jj in 0 ..= i {
+        for k in files[jj].pos ..< files[jj].pos + files[jj].size {
+            result += u64(files[jj].fid * k)
+        }
     }
 
-    return u64(total)
+    fmt.println(result)
+    return
 }
 
+
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = EXPECTED_PART2
-    return
+    return EXPECTED_PART2
 }
 
 /*
