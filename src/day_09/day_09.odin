@@ -29,7 +29,7 @@ Blank :: struct {
 }
 
 
-make_disk :: proc(s: []u8) -> ([]File, []Blank) {
+make_disk_part1 :: proc(s: []u8) -> ([]File, []Blank) {
     files := make_dynamic_array_len_cap([dynamic]File, 0, CAP)
     blanks := make_dynamic_array_len_cap([dynamic]Blank, 0, CAP)
     x, fid, idx: int
@@ -58,14 +58,71 @@ make_disk :: proc(s: []u8) -> ([]File, []Blank) {
     return files[:], blanks[:]
 }
 
-log_files :: proc(files: []File) {
-    fmt.println("\nfiles")
-    #reverse for file in files { fmt.printfln("  %v", file) }
+make_disk_part2 :: proc(s: []u8) -> ([]File, [10][dynamic]Blank) {
+    files := make_dynamic_array_len_cap([dynamic]File, 0, CAP)
+    blank_group: [10][dynamic]Blank
+    for i in 0 ..= 9 { blank_group[i] = make_dynamic_array([dynamic]Blank) }
+
+    x, fid, idx: int
+    file: File
+    blank: Blank
+    for ch, i in s {
+        x = int(ch) - '0'
+        if x == 0 { continue }
+        if i % 2 == 0 {
+            file = File {
+                fid  = fid,
+                pos  = idx,
+                size = x,
+            }
+            append_elem(&files, file)
+            fid += 1
+        } else {
+            blank = Blank {
+                pos  = idx,
+                size = x,
+            }
+            append_elem(&blank_group[x], blank)
+        }
+        idx += x
+    }
+
+    return files[:], blank_group
 }
 
-log_blanks :: proc(blanks: []Blank) {
-    fmt.println("\nblanks")
-    for blank in blanks { fmt.printfln("  %v", blank) }
+next_blank :: proc(blank_group: ^[10][dynamic]Blank, file_pos: int, file_size: int) -> (blank: Blank, ok: bool) {
+    best_idx := 1_000_000
+    min_pos := 1_000_000
+    for i in file_size ..< 10 {
+        if len(blank_group[i]) > 0 &&
+           blank_group[i][0].pos < file_pos &&
+           blank_group[i][0].size >= file_size &&
+           blank_group[i][0].pos < min_pos {
+            best_idx = i
+            min_pos = blank_group[i][0].pos
+        }
+    }
+    if best_idx == 1_000_000 { return }
+
+    ok = true
+    blank = pop_front(&blank_group[best_idx])
+    // update blank_group if blank.size > file_size
+    if blank.size > file_size {
+        new_size := blank.size - file_size
+        new_pos := blank.pos + file_size
+        remaining_blank := Blank {
+            pos  = new_pos,
+            size = new_size,
+        }
+        // find index to insert
+        insert_idx: int
+        for ; insert_idx < len(blank_group[new_size]); insert_idx += 1 {
+            if blank_group[new_size][insert_idx].pos > new_pos { break }
+        }
+        inject_at_elem(&blank_group[new_size], insert_idx, remaining_blank)
+    }
+
+    return
 }
 
 solution := lib.Solution {
@@ -78,10 +135,7 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    files, blanks := make_disk(s)
-    fmt.println(len(files), len(blanks))
-    // log_files(files)
-    // log_blanks(blanks)
+    files, blanks := make_disk_part1(s)
 
     blank: Blank
     i, j: int
@@ -114,13 +168,29 @@ part1 :: proc(s: []u8) -> (result: u64) {
         }
     }
 
-    fmt.println(result)
     return
 }
 
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    return EXPECTED_PART2
+    files, blank_group := make_disk_part2(s)
+
+    blank: Blank
+    ok: bool
+    #reverse for file in files {
+        blank, ok = next_blank(&blank_group, file.pos, file.size)
+        if ok {
+            for k in blank.pos ..< blank.pos + file.size {
+                result += u64(file.fid * k)
+            }
+        } else {
+            for k in file.pos ..< file.pos + file.size {
+                result += u64(file.fid * k)
+            }
+        }
+    }
+
+    return
 }
 
 /*
