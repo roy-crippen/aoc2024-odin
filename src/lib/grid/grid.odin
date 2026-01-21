@@ -1,6 +1,8 @@
 package lib_grid
 
+import "core:fmt"
 import "core:mem"
+import "core:strings"
 import "core:testing"
 
 // Grid: R=rows, C=cols, P=padding_count, T=grid_type
@@ -50,7 +52,7 @@ create_grid_from_bytes :: proc "contextless" (
     $R, $C, $P: int,
     $T: typeid,
     s: []u8,
-    pad_val: u8 = '#',
+    pad_val: u8 = '$',
 ) -> Grid(R, C, P, T) {
     // init whole grid with pad_val (fast bulk fill)
     g := create_grid_with_value(R, C, P, u8, pad_val)
@@ -192,6 +194,20 @@ find_first_position :: proc(g: Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok
     }
     return
 }
+// allocator := context.allocator
+
+find_positions :: proc(g: Grid($R, $C, $P, $T), f: proc(v: T) -> bool, allocator := context.allocator) -> []Pos {
+    ps: [dynamic]Pos
+    ps = make_dynamic_array([dynamic]Pos, allocator)
+    for row, r in g.data {
+        for val, c in row {
+            if f(val) {
+                append_elem(&ps, Pos{r, c})
+            }
+        }
+    }
+    return ps[:]
+}
 
 
 // ────────────────────────────────────────────────
@@ -291,6 +307,10 @@ test_grid :: proc(t: ^testing.T) {
     ok = set_pos(&g1, {1, 1}, '#')
     testing.expect(t, g1.data[1][1] == '#')
 
+    s := show(g1)
+    testing.expect(t, len(s) > 0)
+    s = fmt.tprintln(s)
+    testing.expect(t, len(s) > 0)
 
     // Display
     // fmt.eprintln("\nbasic show:")
@@ -358,4 +378,15 @@ test_usafe :: proc(t: ^testing.T) {
     testing.expect(t, unsafe_get_pos(g, {0, 1}) == '#')
     unsafe_set_pos(&g, {0, 1}, '$')
     testing.expect(t, unsafe_get_pos(g, {0, 1}) == '$')
+}
+
+@(test)
+test_find_position :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
+
+    s: []u8 = {'.', '#', '.', '\n', '.', '.', '.'}
+    g := create_grid_from_bytes(2, 3, 0, u8, s)
+    f := proc(v: u8) -> bool { return v == '.' }
+    ps := find_positions(g, f)
+    testing.expect(t, len(ps) == 5)
 }
