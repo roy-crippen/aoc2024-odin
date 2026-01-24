@@ -183,6 +183,12 @@ neighbors_8 :: proc "contextless" (pos: Pos) -> (xs: [8]Pos) {
     }
     return
 }
+unsafe_neighbor_values_4 :: proc "contextless" (g: Grid($R, $C, $P, $T), pos: Pos) -> (ns: [4]T) {
+    for d, i in directions_cardinal {
+        ns[i] = g.data[pos[0] + d[0]][pos[1] + d[1]]
+    }
+    return
+}
 
 find_first_position :: proc(g: Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok: bool) {
     for row, r in g.data {
