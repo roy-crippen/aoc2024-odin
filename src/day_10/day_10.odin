@@ -59,7 +59,10 @@ part1 :: proc(s: []u8) -> (result: u64) {
                 if nr < 0 || nc < 0 || nr >= N || nc >= N { continue }
                 if g.data[nr][nc] != g.data[cr][cc] + 1 { continue }
                 idx := encode(nr, nc, N)
+
+                // change to ba.unsafe_get
                 was_seen, _ = ba.get(&seen, idx)
+
                 if was_seen { continue }
                 ba.set(&seen, idx)
                 if g.data[nr][nc] == '9' {
