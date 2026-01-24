@@ -2,7 +2,6 @@ package day_11
 
 import "../lib"
 import "core:fmt"
-import "core:math"
 import "core:strings"
 import "core:testing"
 
@@ -36,7 +35,7 @@ digit_cnt :: proc(n: u64) -> u64 {
 
 split :: proc(n: u64) -> (lhs: u64, rhs: u64) {
     digits := digit_cnt(n)
-    divisor := u64(math.pow10(f64((digits / 2))))
+    divisor := lib.pow_10_u64(digits / 2)
     lhs = n / divisor
     rhs = n % divisor
     return
@@ -51,14 +50,12 @@ count :: proc(input_m: map[u64]u64, steps: u64) -> (out_m: map[u64]u64) {
     for stone, qty in input_m {
         if stone == 0 {
             out_m[1] += qty
+        } else if digit_cnt(stone) % 2 == 0 {
+            lhs, rhs := split(stone)
+            out_m[lhs] += qty
+            out_m[rhs] += qty
         } else {
-            if digit_cnt(stone) % 2 == 0 {
-                lhs, rhs := split(stone)
-                out_m[lhs] += qty
-                out_m[rhs] += qty
-            } else {
-                out_m[stone * 2024] += qty
-            }
+            out_m[stone * 2024] += qty
         }
     }
     return count(out_m, steps - 1)
