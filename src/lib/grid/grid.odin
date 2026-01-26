@@ -190,6 +190,24 @@ unsafe_neighbor_values_4 :: proc "contextless" (g: Grid($R, $C, $P, $T), pos: Po
     return
 }
 
+unsafe_neighbor_values_8 :: proc "contextless" (
+    g: Grid($R, $C, $P, $T),
+    r, c: int,
+) -> (
+    n, s, w, e, nw, ne, sw, se: T,
+) {
+    n = g.data[r + directions_all[0][0]][c + directions_all[0][1]]
+    s = g.data[r + directions_all[1][0]][c + directions_all[1][1]]
+    w = g.data[r + directions_all[2][0]][c + directions_all[2][1]]
+    e = g.data[r + directions_all[3][0]][c + directions_all[3][1]]
+    nw = g.data[r + directions_all[4][0]][c + directions_all[4][1]]
+    ne = g.data[r + directions_all[5][0]][c + directions_all[5][1]]
+    sw = g.data[r + directions_all[6][0]][c + directions_all[6][1]]
+    se = g.data[r + directions_all[7][0]][c + directions_all[7][1]]
+    return
+}
+
+
 find_first_position :: proc(g: Grid($R, $C, $P, $T), v: T) -> (position: Pos, ok: bool) {
     for row, r in g.data {
         for val, c in row {
@@ -395,4 +413,23 @@ test_find_position :: proc(t: ^testing.T) {
     f := proc(v: u8) -> bool { return v == '.' }
     ps := find_positions(g, f)
     testing.expect(t, len(ps) == 5)
+}
+
+@(test)
+test_unsafe_neighbor_values_8 :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
+    data: [][]u16 = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    g := create_grid_from_slice(3, 3, 0, u16, data)
+    n, s, w, e, nw, ne, sw, se := unsafe_neighbor_values_8(g, 1, 1)
+    testing.expect(t, n == 2)
+    testing.expect(t, s == 8)
+    testing.expect(t, w == 4)
+    testing.expect(t, e == 6)
+    testing.expect(t, nw == 1)
+    testing.expect(t, ne == 3)
+    testing.expect(t, sw == 7)
+    testing.expect(t, se == 9)
 }
