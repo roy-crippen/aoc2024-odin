@@ -2,7 +2,6 @@ package day_12
 
 import "../lib"
 import gr "../lib/grid"
-import ba "core:container/bit_array"
 import "core:container/queue"
 import "core:fmt"
 import "core:testing"
@@ -20,43 +19,30 @@ when EXAMPLE {
     EXPECTED_PART2 :: 830516
 }
 
-encode :: #force_inline proc "contextless" (r, c, cols: int) -> int {
-    return r * cols + c
-}
-
-
-// change to solve_part1
 solve_part1 :: proc(g: gr.Grid(N, N, 1, byte)) -> (sum: u64) {
-    max_l: int
     q: queue.Queue(gr.Pos)
     queue.init(&q, capacity = 32)
 
-    seen: ba.Bit_Array
-    _ = ba.init(&seen, max_index = (N + 2) * (N + 2), min_index = 0)
+    seen := gr.create_grid(N + 2, N + 2, 0, bool)
 
-    area: [dynamic]gr.Pos
-    // area = make_dynamic_array_len_cap([dynamic]gr.Pos, 0, REGION_CAP)
-
-    key, n_key, cr, cc, nr, nc: int
+    cr, cc, nr, nc: int
     xs: [4][2]int
     pos, p: gr.Pos
     anchor_ch, ch: u8
-    cnt: int
+    cnt, max_q_len: int
+    perimeter, area_points: u64
     for r in 1 ..< g.rows - 1 {
         for c in 1 ..< g.cols - 1 {
-            key = encode(r, c, g.cols)
-            if ba.unsafe_get(&seen, key) do continue
-            ba.unsafe_set(&seen, key)
+            perimeter, area_points = 0, 1
+            if gr.unsafe_get(seen, r, c) do continue
+            gr.unsafe_set(&seen, r, c, true)
 
-            // clear(&area)
-            area = make_dynamic_array([dynamic]gr.Pos)
             pos = {r, c}
-            append_elem(&area, pos)
-
             queue.clear(&q)
             queue.push_back(&q, pos)
             anchor_ch = gr.unsafe_get(g, r, c)
             for queue.len(q) > 0 {
+                max_q_len = max(max_q_len, queue.len(q))
                 p = queue.pop_front(&q)
                 cr, cc = p[0], p[1]
                 xs = {{cr - 1, cc}, {cr, cc + 1}, {cr + 1, cc}, {cr, cc - 1}}
@@ -64,47 +50,20 @@ solve_part1 :: proc(g: gr.Grid(N, N, 1, byte)) -> (sum: u64) {
                     nr, nc = x[0], x[1]
                     cnt += 1
                     ch = gr.unsafe_get(g, nr, nc)
-                    if ch == '$' do continue
-                    if ch != anchor_ch do continue
-
-                    n_key = encode(nr, nc, g.cols)
-                    if ba.unsafe_get(&seen, n_key) do continue
-
-                    append_elem(&area, x)
+                    if ch == '$' || ch != anchor_ch {
+                        perimeter += 1
+                        continue
+                    }
+                    if gr.unsafe_get(seen, nr, nc) do continue
+                    gr.unsafe_set(&seen, nr, nc, true)
+                    area_points += 1
                     queue.push_back(&q, x)
-                    ba.unsafe_set(&seen, n_key)
                 }
             }
-            max_l = max(max_l, len(area))
-            l := u64(len(area))
-
-            // add to sum without calling perimeter
-            //
-            //
-            //
-            //
-            p := perimeter(g, area)
-            //
-            //
-            //
-            //
-            //
-            sum += l * p
-            // sum += u64(len(area)) * perimeter(g, area)
+            sum += area_points * perimeter
         }
     }
-    fmt.println("max_l = ", max_l)
-    return
-}
-
-perimeter :: proc(g: gr.Grid(N, N, 1, byte), ps: [dynamic]gr.Pos) -> (tot: u64) {
-    ch: u8
-    for p in ps {
-        ch = gr.unsafe_get(g, p[0], p[1])
-        for n_ch in gr.unsafe_neighbor_values_4(g, p) {
-            if n_ch != ch do tot += 1
-        }
-    }
+    fmt.println(max_q_len)
     return
 }
 
@@ -119,7 +78,6 @@ solution := lib.Solution {
 
 part1 :: proc(s: []u8) -> (result: u64) {
     g := gr.create_grid_from_bytes(N, N, 1, byte, s, pad_val = '$')
-    // fmt.println(gr.show_pretty_char(g))
     result = solve_part1(g)
     return
 }
