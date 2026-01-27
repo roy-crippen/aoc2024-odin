@@ -54,6 +54,11 @@ unssafe_slice_u8_to_i32 :: proc "contextless" (s: []u8) -> (result: i32) {
     return
 }
 
+unsafe_slice_u8_to_f32 :: proc "contextless" (s: []u8) -> (result: f32) {
+    for c in s { result = result * 10 + (f32(c) - '0') }
+    return
+}
+
 dbg :: proc(s: string) -> string { return strings.concatenate({"\n", s, "\n"}, context.temp_allocator) }
 
 pow :: proc "contextless" (x, power: u64) -> (result: u64) {
