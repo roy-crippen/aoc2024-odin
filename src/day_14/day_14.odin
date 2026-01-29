@@ -25,19 +25,18 @@ when EXAMPLE {
 }
 HALF_WIDTH :: WIDTH / 2
 HALF_HEIGHT :: HEIGHT / 2
+N_BOTS :: 70
 
 Bot :: struct {
-    x:  int,
-    vx: int,
-    y:  int,
-    vy: int,
+    x, vx, y, vy: int,
 }
 
 Acc :: struct {
-    q1: int,
-    q2: int,
-    q3: int,
-    q4: int,
+    q1, q2, q3, q4: int,
+}
+
+Offset :: struct {
+    s, vertical_variance, horizontal_variance: int,
 }
 
 
@@ -63,7 +62,7 @@ parse :: proc(s_: []u8) -> (bots: [BOT_CNT]Bot) {
     return
 }
 
-find_quadrant :: #force_inline proc "contextless" (bot: Bot) -> Acc {
+find_quadrant :: proc "contextless" (bot: Bot) -> Acc {
     if bot.x == HALF_WIDTH || bot.y == HALF_HEIGHT do return {0, 0, 0, 0}
     if bot.x < HALF_WIDTH && bot.y < HALF_HEIGHT do return {1, 0, 0, 0}
     if bot.x >= HALF_WIDTH && bot.y < HALF_HEIGHT do return {0, 1, 0, 0}
@@ -71,7 +70,7 @@ find_quadrant :: #force_inline proc "contextless" (bot: Bot) -> Acc {
     return {0, 0, 0, 1}
 }
 
-update_acc :: #force_inline proc "contextless" (acc: ^Acc, a: Acc) {
+update_acc :: proc "contextless" (acc: ^Acc, a: Acc) {
     acc.q1 += a.q1
     acc.q2 += a.q2
     acc.q3 += a.q3
@@ -85,6 +84,49 @@ solution := lib.Solution {
     part2          = part2,
     expected_part1 = EXPECTED_PART1,
     expected_part2 = EXPECTED_PART2,
+}
+
+compute_variance :: proc(ns: [N_BOTS]int) -> int {
+    len := len(ns)
+    sum, x: int
+    for n in ns do sum += n
+    mean := math.floor_div(sum, len)
+
+    for n in ns do x += (n - mean) * (n - mean)
+    return math.floor_div(x, len)
+}
+
+get_averages :: proc(bots: []Bot) -> (offset: [HEIGHT]Offset) {
+    vertical_variance, horizontal_variance: int
+    for s in 0 ..< HEIGHT {
+        vert_pos: [N_BOTS]int
+        hori_pos: [N_BOTS]int
+
+        for bot, i in bots {
+            vert_pos[i] = math.floor_mod(bot.x + bot.vx * s, WIDTH)
+            hori_pos[i] = math.floor_mod(bot.y + bot.vy * s, HEIGHT)
+        }
+
+        vertical_variance = compute_variance(vert_pos)
+        horizontal_variance = compute_variance(hori_pos)
+        offset[s] = {s, vertical_variance, horizontal_variance}
+    }
+    return
+}
+
+get_offsets :: proc(averages: [HEIGHT]Offset) -> (int, int) {
+    min_x := averages[0]
+    min_y := averages[0]
+
+    for average in averages {
+        if min_x.vertical_variance > average.vertical_variance {
+            min_x = average
+        }
+        if min_y.horizontal_variance > average.horizontal_variance {
+            min_y = average
+        }
+    }
+    return min_x.s, min_y.s
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
@@ -101,7 +143,19 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = EXPECTED_PART2
+    bots := parse(s)
+    averages := get_averages(bots[:N_BOTS])
+    vert_offset, hori_offset := get_offsets(averages)
+
+    value: int
+    for i in 0 ..< HEIGHT {
+        value = i * WIDTH + vert_offset
+        if math.floor_mod(value - hori_offset, HEIGHT) == 0 {
+            break
+        }
+    }
+
+    result = u64(value)
     return
 }
 
