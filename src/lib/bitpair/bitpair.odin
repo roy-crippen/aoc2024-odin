@@ -14,7 +14,7 @@ BitPairSet :: struct {
 // max_digits in range 0..=4
 create :: proc(max_digits: u64, allocator := context.allocator) -> (s: BitPairSet, ok: bool) {
     if max_digits < 1 || max_digits > 4 { return s, false }
-    s.max_value = lib.pow(10, max_digits + 1)
+    s.max_value = lib.pow_u64(10, max_digits + 1)
     total := int(s.max_value * s.max_value)
     ok = bit_array.init(&s.bits, total, 0, allocator)
     return
