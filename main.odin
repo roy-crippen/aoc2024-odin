@@ -4,20 +4,20 @@ import "core:fmt"
 import va "core:mem/virtual"
 import "core:os"
 import "core:time"
-import "src/day_01"
-import "src/day_02"
-import "src/day_03"
-import "src/day_04"
-import "src/day_05"
-import "src/day_06"
-import "src/day_07"
-import "src/day_08"
-import "src/day_09"
-import "src/day_10"
-import "src/day_11"
-import "src/day_12"
-import "src/day_13"
-import "src/day_14"
+// import "src/day_01"
+// import "src/day_02"
+// import "src/day_03"
+// import "src/day_04"
+// import "src/day_05"
+// import "src/day_06"
+// import "src/day_07"
+// import "src/day_08"
+// import "src/day_09"
+// import "src/day_10"
+// import "src/day_11"
+// import "src/day_12"
+// import "src/day_13"
+// import "src/day_14"
 import "src/day_15"
 import "src/lib"
 
@@ -41,20 +41,20 @@ main :: proc() {
     mem_metrics := make_dynamic_array([dynamic]string, allocator = context.temp_allocator)
 
     sols := []lib.Solution {
-        day_01.solution,
-        day_02.solution,
-        day_03.solution,
-        day_04.solution,
-        day_05.solution,
-        day_06.solution,
-        day_07.solution,
-        day_08.solution,
-        day_09.solution,
-        day_10.solution,
-        day_11.solution,
-        day_12.solution,
-        day_13.solution,
-        day_14.solution,
+        // day_01.solution,
+        // day_02.solution,
+        // day_03.solution,
+        // day_04.solution,
+        // day_05.solution,
+        // day_06.solution,
+        // day_07.solution,
+        // day_08.solution,
+        // day_09.solution,
+        // day_10.solution,
+        // day_11.solution,
+        // day_12.solution,
+        // day_13.solution,
+        // day_14.solution,
         day_15.solution,
     }
 
