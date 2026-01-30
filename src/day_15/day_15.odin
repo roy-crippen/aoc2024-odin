@@ -214,24 +214,16 @@ move_block2 :: proc(g: ^gr.Grid(N, 2 * N, 0, byte), ps: ^[]gr.Pos, dir: u8) {
     switch dir {
     case '^':
         sort.heap_sort_proc(ps^, compare_row_then_col_asc)
-        // fmt.println(len(ps), ps)
         remove_duplicates(ps)
-    // fmt.println(len(ps), ps, "\n")
     case 'v':
         sort.heap_sort_proc(ps^, compare_row_then_col_desc)
-        // fmt.println(len(ps), ps)
         remove_duplicates(ps)
-    // fmt.println(len(ps), ps, "\n")
     case '<':
         sort.heap_sort_proc(ps^, compare_col_then_row_asc)
-        // fmt.println(len(ps), ps)
         remove_duplicates(ps)
-    // fmt.println(len(ps), ps, "\n")
     case '>':
         sort.heap_sort_proc(ps^, compare_col_then_row_desc)
-        // fmt.println(len(ps), ps)
         remove_duplicates(ps)
-    // fmt.println(len(ps), ps, "\n")
     }
 
     for p in ps do gr.unsafe_swap(g, p, move(p, dir))
