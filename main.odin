@@ -21,7 +21,7 @@ import "src/day_14"
 import "src/day_15"
 import "src/lib"
 
-ARENA_SIZE :: 2 * 1024 * 1024 // 4 MiB
+ARENA_SIZE :: 2 * 1024 * 1024 // 2 MiB
 
 log_allocator :: proc(day: u8, part: u8, a: ^va.Arena) -> string {
     used_kib := a.total_used / 1024
