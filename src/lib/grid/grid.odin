@@ -129,6 +129,10 @@ unsafe_set :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), r, c: 
     g.data[r][c] = value
 }
 
+unsafe_swap :: #force_inline proc "contextless" (g: ^Grid($R, $C, $P, $T), p1, p2: Pos) {
+    g.data[p1[0]][p1[1]], g.data[p2[0]][p2[1]] = g.data[p2[0]][p2[1]], g.data[p1[0]][p1[1]]
+}
+
 
 // ────────────────────────────────────────────────
 // neighbors
