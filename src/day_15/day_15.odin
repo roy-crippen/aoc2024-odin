@@ -280,8 +280,6 @@ part1 :: proc(s: []u8) -> (result: u64) {
 part2 :: proc(s: []u8) -> (result: u64) {
     g_small, moves := parse(s)
     g := expand_grid(g_small)
-    // fmt.printfln("\n%s\n", gr.show_pretty_char(g_small))
-    // fmt.printfln("\n%s\n", gr.show_pretty_char(g))
 
     // apply movements
     ps: sa.Small_Array(256, gr.Pos)
