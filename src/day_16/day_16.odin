@@ -1,6 +1,7 @@
 package day_16
 
 import "../lib"
+import dk "../lib/dijkstra"
 import "core:fmt"
 import "core:testing"
 
@@ -26,6 +27,20 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
+
+    N :: 3
+    adj: [N][dynamic]dk.Neighbor
+    for i in 0 ..< N do adj[i] = make_dynamic_array_len_cap([dynamic]dk.Neighbor, 0, 2)
+    append(&adj[0], dk.Neighbor{1, 1})
+    append(&adj[0], dk.Neighbor{2, 100})
+    append(&adj[1], dk.Neighbor{2, 1})
+
+    start_vertex, end_vertex := 0, 2
+    min_dist, prev := dk.dijkstra_compute_paths(N, start_vertex, adj)
+    path := dk.get_shortest_path_to(start_vertex, end_vertex, prev[:])
+    fmt.println(dk.show_path(path))
+    fmt.println("cost:", min_dist[end_vertex])
+
     result = EXPECTED_PART1
     return
 }
