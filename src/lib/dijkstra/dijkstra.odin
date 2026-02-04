@@ -8,36 +8,33 @@ import "core:slice"
 import "core:strings"
 import "core:testing"
 
-Neighbor :: struct {
-    vertex: int,
+Neighbor :: struct($V: typeid) {
+    vertex: V,
     dist:   f64,
 }
 
 dijkstra_compute_paths :: proc(
-    $N: int,
-    source: int,
-    adj_list: [N][dynamic]Neighbor,
+    adj_list: $T/map[$V][dynamic]Neighbor(V),
+    source: V,
     allocator := context.allocator,
 ) -> (
-    []f64,
-    []int,
+    map[V]f64,
+    map[V]V,
 ) {
 
-    min_distance := make_dynamic_array_len_cap([dynamic]f64, N, N, allocator = allocator)
-    for i in 0 ..< N do min_distance[i] = math.INF_F64
-    defer delete_dynamic_array(min_distance)
-
-    previous := make_dynamic_array_len_cap([dynamic]int, N, N, allocator = allocator)
-    for i in 0 ..< N do previous[i] = -1
-    defer delete_dynamic_array(previous)
+    // init return maps
+    adj_list_len := len(adj_list)
+    min_distance := make_map_cap(map[V]f64, adj_list_len, allocator = allocator)
+    for v in adj_list do min_distance[v] = math.INF_F64
+    previous := make_map_cap(map[V]V, adj_list_len, allocator = allocator)
 
     // min-heap priority queue
-    less :: proc "odin" (a, b: Neighbor) -> bool { return a.dist < b.dist }
-    queue: pq.Priority_Queue(Neighbor)
-    pq.init(&queue, less, pq.default_swap_proc(Neighbor), allocator = allocator)
+    less :: proc "odin" (a, b: Neighbor(V)) -> bool { return a.dist < b.dist }
+    queue: pq.Priority_Queue(Neighbor(V))
+    pq.init(&queue, less, pq.default_swap_proc(Neighbor(V)), allocator = allocator)
     defer pq.destroy(&queue)
 
-    pq.push(&queue, Neighbor{dist = 0, vertex = source})
+    pq.push(&queue, Neighbor(V){dist = 0, vertex = source})
     for pq.len(queue) > 0 {
         item := pq.pop(&queue)
         dist := item.dist
@@ -56,26 +53,27 @@ dijkstra_compute_paths :: proc(
             if alt < min_distance[v] {
                 min_distance[v] = alt
                 previous[v] = u
-                pq.push(&queue, Neighbor{dist = alt, vertex = v})
+                pq.push(&queue, Neighbor(V){dist = alt, vertex = v})
             }
         }
     }
-    return min_distance[:], previous[:]
+    return min_distance, previous
 }
 
 get_shortest_path_to :: proc(
-    start_vertex: int,
-    end_vertex: int,
-    previous: []int,
-    allocator := context.temp_allocator,
-) -> []int {
-    path: [dynamic]int
-    max_len := 2 * len(previous)
-    path = make_dynamic_array_len_cap([dynamic]int, 0, max_len)
+    start_vertex: $V,
+    end_vertex: V,
+    previous: map[V]V,
+    allocator := context.allocator,
+) -> []V {
+    path: [dynamic]V
+    max_len := len(previous)
+    path = make_dynamic_array_len_cap([dynamic]V, 0, max_len)
+    defer delete_dynamic_array(path)
 
     current := end_vertex
     cnt: int
-    for current != start_vertex && current != -1 && cnt < max_len {
+    for current != start_vertex && cnt < max_len {
         append(&path, current)
         current = previous[current]
         cnt += 1
@@ -85,15 +83,14 @@ get_shortest_path_to :: proc(
     return slice.clone(path[:], allocator)
 }
 
-show_path :: proc(path: []int, allocator := context.temp_allocator) -> string {
+show_path :: proc(path: []$V, sufix := '\n', allocator := context.temp_allocator) -> string {
     b: strings.Builder
     strings.builder_init(&b, allocator)
 
-
-    fmt.sbprint(&b, "Path: ")
+    fmt.sbprint(&b, "Path: \n")
     for v, i in path {
-        if i > 0 do fmt.sbprint(&b, " → ")
-        fmt.sbprint(&b, v)
+        if i > 0 do fmt.sbprintf(&b, " →%v", sufix)
+        fmt.sbprintf(&b, "  %v", v)
     }
     fmt.sbprint(&b, "\n")
     return strings.to_string(b)
@@ -104,58 +101,58 @@ test_dijkstra_int :: proc(t: ^testing.T) {
     context.allocator = context.temp_allocator
     // 6 vertices (0..5)
     N :: 6
-    adj: [N][dynamic]Neighbor
-    for i in 0 ..< N do adj[i] = make_dynamic_array_len_cap([dynamic]Neighbor, 0, 8)
+    adj: map[int][dynamic]Neighbor(int)
+    for i in 0 ..< N do adj[i] = make_dynamic_array_len_cap([dynamic]Neighbor(int), 0, 4)
 
     // directed graph — one directions
-    append(&adj[0], Neighbor{1, 7})
-    append(&adj[0], Neighbor{2, 9})
-    append(&adj[0], Neighbor{5, 14})
-    append(&adj[1], Neighbor{2, 10})
-    append(&adj[1], Neighbor{3, 15})
-    append(&adj[2], Neighbor{3, 11})
-    append(&adj[2], Neighbor{5, 2})
-    append(&adj[3], Neighbor{4, 6})
-    append(&adj[4], Neighbor{5, 9})
+    append(&adj[0], Neighbor(int){1, 7})
+    append(&adj[0], Neighbor(int){2, 9})
+    append(&adj[0], Neighbor(int){5, 14})
+    append(&adj[1], Neighbor(int){2, 10})
+    append(&adj[1], Neighbor(int){3, 15})
+    append(&adj[2], Neighbor(int){3, 11})
+    append(&adj[2], Neighbor(int){5, 2})
+    append(&adj[3], Neighbor(int){4, 6})
+    append(&adj[4], Neighbor(int){5, 9})
 
     start_vertex := 0
-    min_dist, prev := dijkstra_compute_paths(N, start_vertex, adj)
+    min_dist, prev := dijkstra_compute_paths(adj, start_vertex)
 
     end_vertex := 4
-    path := get_shortest_path_to(start_vertex, end_vertex, prev[:])
+    path := get_shortest_path_to(start_vertex, end_vertex, prev)
     testing.expect(t, min_dist[end_vertex] == 26)
-    // log.info(min_dist[end_vertex])
-    // log.info(show_path(path))
+    log.info(min_dist[end_vertex])
+    log.info(show_path(path))
 
     end_vertex = 5
-    path = get_shortest_path_to(start_vertex, end_vertex, prev[:])
+    path = get_shortest_path_to(start_vertex, end_vertex, prev)
     testing.expect(t, min_dist[end_vertex] == 11)
-    // log.info(min_dist[end_vertex])
-    // log.info(show_path(path))
+    log.info(min_dist[end_vertex])
+    log.info(show_path(path))
 
     // non-directed graph — add reverse directions
-    append(&adj[1], Neighbor{0, 7})
-    append(&adj[2], Neighbor{0, 9})
-    append(&adj[5], Neighbor{0, 14})
-    append(&adj[2], Neighbor{1, 10})
-    append(&adj[3], Neighbor{1, 15})
-    append(&adj[3], Neighbor{2, 11})
-    append(&adj[5], Neighbor{2, 2})
-    append(&adj[4], Neighbor{3, 6})
-    append(&adj[5], Neighbor{4, 9})
+    append(&adj[1], Neighbor(int){0, 7})
+    append(&adj[2], Neighbor(int){0, 9})
+    append(&adj[5], Neighbor(int){0, 14})
+    append(&adj[2], Neighbor(int){1, 10})
+    append(&adj[3], Neighbor(int){1, 15})
+    append(&adj[3], Neighbor(int){2, 11})
+    append(&adj[5], Neighbor(int){2, 2})
+    append(&adj[4], Neighbor(int){3, 6})
+    append(&adj[5], Neighbor(int){4, 9})
 
     start_vertex = 0
-    min_dist, prev = dijkstra_compute_paths(N, start_vertex, adj)
+    min_dist, prev = dijkstra_compute_paths(adj, start_vertex)
 
     end_vertex = 4
-    path = get_shortest_path_to(start_vertex, end_vertex, prev[:])
+    path = get_shortest_path_to(start_vertex, end_vertex, prev)
     testing.expect(t, min_dist[end_vertex] == 20)
-    // log.info(min_dist[end_vertex])
-    // log.info(show_path(path))
+    log.info(min_dist[end_vertex])
+    log.info(show_path(path))
 
     end_vertex = 5
-    path = get_shortest_path_to(start_vertex, end_vertex, prev[:])
+    path = get_shortest_path_to(start_vertex, end_vertex, prev)
     testing.expect(t, min_dist[end_vertex] == 11)
-    // log.info(min_dist[end_vertex])
-    // log.info(show_path(path))
+    log.info(min_dist[end_vertex])
+    log.info(show_path(path))
 }
