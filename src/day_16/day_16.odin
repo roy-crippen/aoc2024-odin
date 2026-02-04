@@ -34,7 +34,6 @@ Dir :: enum {
     E,
 }
 
-
 map_g: gr.Grid(N, N, 0, bool)
 cost_g: gr.Grid(N, N, 0, [4]int)
 buckets: [N_BUCKETS][dynamic]Node // used as a circular array/queue
@@ -83,15 +82,13 @@ move_pos :: proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
     return {r, c}
 }
 
-move_if_true :: proc(node: Node) -> lib.Optional(Node) {
+move_if_true :: proc "contextless" (node: Node) -> lib.Optional(Node) {
     next_pos := move_pos(node.pos, node.dir)
-    if map_g.data[next_pos[0]][next_pos[1]] {
-        return {{next_pos, node.dir, node.cost + 1}, true}
-    }
+    if map_g.data[next_pos[0]][next_pos[1]] do return {{next_pos, node.dir, node.cost + 1}, true}
     return {node, false}
 }
 
-rotate_counter_90 :: proc(dir: Dir) -> Dir {
+rotate_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
     switch dir {
     case .N:
         return .W
@@ -105,7 +102,7 @@ rotate_counter_90 :: proc(dir: Dir) -> Dir {
     return dir
 }
 
-rotate_90 :: proc(dir: Dir) -> Dir {
+rotate_90 :: proc "contextless" (dir: Dir) -> Dir {
     switch dir {
     case .N:
         return .E
@@ -153,6 +150,7 @@ part1 :: proc(s: []u8) -> (result: u64) {
             }
 
             for option in options {
+                
                 if option.ok {
                     pos, dir, cost = option.value.pos, option.value.dir, option.value.cost
                     cs = &cost_g.data[pos[0]][pos[1]]
