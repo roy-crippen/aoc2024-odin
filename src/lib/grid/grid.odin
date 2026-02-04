@@ -1,7 +1,6 @@
 package lib_grid
 
 import "core:fmt"
-import "core:mem"
 import "core:strings"
 import "core:testing"
 
@@ -42,9 +41,28 @@ create_grid :: proc "contextless" ($R, $C, $P: int, $T: typeid) -> Grid(R, C, P,
 // Creates a grid filled with the given value
 create_grid_with_value :: proc "contextless" ($R, $C, $P: int, $T: typeid, value: T) -> Grid(R, C, P, T) {
     g := create_grid(R, C, P, T)
-    mem.set(&g.data[0][0], transmute(u8)value, g.rows * g.cols)
+    for r in 0 ..< g.rows {
+        for c in 0 ..< g.cols {
+            g.data[r][c] = value
+        }
+    }
     return g
 }
+
+// allocats and fills with the given value using supplied allocator
+allocate_grid_with_value :: proc($G: typeid/Grid($R, $C, $P, $T), value: T, allocator := context.allocator) -> (g: G) {
+    g = new(Grid(R, C, P, T), allocator = allocator)^
+    g.rows = R + 2 * P
+    g.cols = C + 2 * P
+    g.pad_cnt = P
+    for r in 0 ..< g.rows {
+        for c in 0 ..< g.cols {
+            g.data[r][c] = value
+        }
+    }
+    return
+}
+
 
 // Creates a grid from slice 's' of type []byte
 // Assumes each row is separated by '\n'
@@ -175,7 +193,9 @@ south_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_p
 east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .E) }
 north_east :: #force_inline proc "contextless" (pos: Pos) -> Pos { return move_pos(pos, .NE) }
 
+//                                  n        s       w       e
 directions_cardinal := [4][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+
 directions_diagonal := [4][2]int{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 directions_all := [8][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 
