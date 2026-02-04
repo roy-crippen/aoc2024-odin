@@ -2,24 +2,21 @@ package day_16
 
 import "../lib"
 import gr "../lib/grid"
-import "core:fmt"
-import "core:testing"
 
 EXAMPLE :: false
 when EXAMPLE {
     N :: 15
-    N_BUCKETS :: 64
     INPUT :: #load("example.txt", []u8)
     EXPECTED_PART1 :: 7036
     EXPECTED_PART2 :: 45
 } else {
     N :: 141
-    N_BUCKETS :: 320
     INPUT :: #load("day_16.txt", []u8)
     EXPECTED_PART1 :: 106512
     EXPECTED_PART2 :: 563
 }
 BIG :: max(int)
+N_BUCKETS :: 64
 
 Node :: struct {
     pos:  gr.Pos,
@@ -82,13 +79,19 @@ move_pos :: proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
     return {r, c}
 }
 
+is_valid_pos :: #force_inline proc "contextless" (pos: gr.Pos) -> bool {
+    return pos[0] < N && pos[1] < N && pos[0] >= 0 && pos[1] >= 0
+}
+
 move_if_true :: proc "contextless" (node: Node) -> lib.Optional(Node) {
     next_pos := move_pos(node.pos, node.dir)
-    if map_g.data[next_pos[0]][next_pos[1]] do return {{next_pos, node.dir, node.cost + 1}, true}
+    if is_valid_pos(next_pos) && map_g.data[next_pos[0]][next_pos[1]] {
+        return {{next_pos, node.dir, node.cost + 1}, true}
+    }
     return {node, false}
 }
 
-rotate_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
+rotate_dir_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
     switch dir {
     case .N:
         return .W
@@ -102,7 +105,7 @@ rotate_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
     return dir
 }
 
-rotate_90 :: proc "contextless" (dir: Dir) -> Dir {
+rotate_dir_90 :: proc "contextless" (dir: Dir) -> Dir {
     switch dir {
     case .N:
         return .E
@@ -115,6 +118,21 @@ rotate_90 :: proc "contextless" (dir: Dir) -> Dir {
     }
     return dir
 }
+
+reverse_dir :: proc "contextless" (dir: Dir) -> Dir {
+    switch dir {
+    case .N:
+        return .S
+    case .W:
+        return .E
+    case .S:
+        return .N
+    case .E:
+        return .W
+    }
+    return dir
+}
+
 
 solution := lib.Solution {
     day            = 16,
@@ -140,17 +158,17 @@ part1 :: proc(s: []u8) -> (result: u64) {
         for len(buckets[idx % N_BUCKETS]) > 0 {
             bucket = pop(&buckets[idx % N_BUCKETS])
             if bucket.pos == end_pos {
-                return u64(bucket.cost)
+                result = u64(bucket.cost)
+                return
             }
 
             options = {
                 move_if_true(bucket),
-                lib.Optional(Node){{bucket.pos, rotate_counter_90(bucket.dir), bucket.cost + 1000}, true},
-                lib.Optional(Node){{bucket.pos, rotate_90(bucket.dir), bucket.cost + 1000}, true},
+                lib.Optional(Node){{bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost + 1000}, true},
+                lib.Optional(Node){{bucket.pos, rotate_dir_90(bucket.dir), bucket.cost + 1000}, true},
             }
 
             for option in options {
-                
                 if option.ok {
                     pos, dir, cost = option.value.pos, option.value.dir, option.value.cost
                     cs = &cost_g.data[pos[0]][pos[1]]
@@ -163,32 +181,96 @@ part1 :: proc(s: []u8) -> (result: u64) {
         }
         idx += 1
     }
-
-    result = EXPECTED_PART1
     return
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = EXPECTED_PART2
+    start_pos, end_pos := parse(s)
+    append_elem(&buckets[0], Node{start_pos, .E, 0})
+    cost_g.data[start_pos[0]][start_pos[1]][Dir.E] = 0
+
+    idx, cost: int
+    bucket: Node
+    pos: gr.Pos
+    dir: Dir
+    cs: ^[4]int
+    options: [3]Node
+    lowest := lib.Optional(int){-1, false}
+    traversal: for {
+        for len(buckets[idx % N_BUCKETS]) > 0 {
+            bucket = pop(&buckets[idx % N_BUCKETS])
+            if bucket.pos == end_pos {
+                if lowest.ok {
+                    if bucket.cost > lowest.value {
+                        break traversal
+                    }
+                } else {
+                    lowest = {bucket.cost, true}
+                }
+            }
+
+            options = {
+                {move_pos(bucket.pos, bucket.dir), bucket.dir, bucket.cost + 1},
+                {bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost + 1000},
+                {bucket.pos, rotate_dir_90(bucket.dir), bucket.cost + 1000},
+            }
+
+            for option in options {
+                pos, dir, cost = option.pos, option.dir, option.cost
+                if is_valid_pos(pos) && map_g.data[pos[0]][pos[1]] {
+                    cs = &cost_g.data[pos[0]][pos[1]]
+                    if cost < cs[dir] {
+                        cs[dir] = cost
+                        append_elem(&buckets[cost % N_BUCKETS], option)
+                    }
+                }
+            }
+        }
+        idx += 1
+    }
+
+    visted := gr.create_grid(N, N, 0, bool)
+    gr.unsafe_set_pos(&visted, end_pos, true)
+    if lowest.ok {
+        queue := make_dynamic_array([dynamic]Node)
+        for direction in 0 ..= 3 {
+            if cost_g.data[end_pos[0]][end_pos[1]][direction] == lowest.value {
+                append_elem(&queue, Node{end_pos, Dir(direction), lowest.value})
+            }
+        }
+
+        for len(queue) > 0 {
+            bucket = pop(&queue)
+
+            if bucket.cost < 1 {
+                continue
+            }
+
+            options = {
+                {move_pos(bucket.pos, reverse_dir(bucket.dir)), bucket.dir, bucket.cost - 1},
+                {bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost - 1000},
+                {bucket.pos, rotate_dir_90(bucket.dir), bucket.cost - 1000},
+            }
+
+            for option in options {
+                pos, dir, cost = option.pos, option.dir, option.cost
+                if is_valid_pos(pos) {
+                    cs = &cost_g.data[pos[0]][pos[1]]
+                    if cost == cs[dir] {
+                        visted.data[pos[0]][pos[1]] = true
+                        append_elem(&queue, option)
+                    }
+                }
+
+            }
+
+        }
+    }
+
+    for i in 0 ..< N {
+        for j in 0 ..< N {
+            if visted.data[i][j] do result += 1
+        }
+    }
     return
-}
-
-/*
-   tests -----------------------------
-*/
-
-@(test)
-test_part1 :: proc(t: ^testing.T) {
-    context.allocator = context.temp_allocator
-    p1 := part1(INPUT)
-    expected: u64 = EXPECTED_PART1
-    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
-}
-
-@(test)
-test_part2 :: proc(t: ^testing.T) {
-    context.allocator = context.temp_allocator
-    p2 := part2(INPUT)
-    expected: u64 = EXPECTED_PART2
-    testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
 }
