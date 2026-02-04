@@ -102,6 +102,15 @@ pow_10_u64 :: #force_inline proc "contextless" (n: u64) -> u64 {
     return powers_10[n]
 }
 
+Optional :: struct(T: typeid) {
+    value: T,
+    ok:    bool,
+}
+
+unwrap_or :: proc(o: Optional($T), default: T) -> T {
+    return o.ok ? o.value : default
+}
+
 /*
    tests -----------------------------
 */
