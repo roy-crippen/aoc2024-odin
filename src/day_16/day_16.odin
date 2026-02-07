@@ -157,7 +157,6 @@ solution := lib.Solution {
 part1 :: proc(s: []u8) -> (result: u64) {
     start_pos, end_pos := find_start_and_end(s)
     grid = gr.create_grid_from_bytes(N, N, 0, u8, s)
-    fmt.println(start_pos, end_pos, grid.rows, grid.cols)
 
     first_q: queue.Queue(Node)
     queue.init(&first_q, capacity = NQ)
@@ -173,7 +172,6 @@ part1 :: proc(s: []u8) -> (result: u64) {
         first_q, second_q = second_q, first_q
     }
 
-    fmt.println(lowest)
     return u64(lowest)
 }
 
