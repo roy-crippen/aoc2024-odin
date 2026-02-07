@@ -2,21 +2,25 @@ package day_16
 
 import "../lib"
 import gr "../lib/grid"
+import "core:container/queue"
+import "core:fmt"
+import "core:testing"
 
 EXAMPLE :: false
 when EXAMPLE {
     N :: 15
+    NQ :: 64
+
     INPUT :: #load("example.txt", []u8)
     EXPECTED_PART1 :: 7036
     EXPECTED_PART2 :: 45
 } else {
     N :: 141
+    NQ :: 768
     INPUT :: #load("day_16.txt", []u8)
     EXPECTED_PART1 :: 106512
     EXPECTED_PART2 :: 563
 }
-BIG :: max(int)
-N_BUCKETS :: 64
 
 Node :: struct {
     pos:  gr.Pos,
@@ -31,13 +35,12 @@ Dir :: enum {
     E,
 }
 
-map_g: gr.Grid(N, N, 0, bool)
-cost_g: gr.Grid(N, N, 0, [4]int)
-buckets: [N_BUCKETS][dynamic]Node // used as a circular array/queue
+grid: gr.Grid(N, N, 0, u8)
+seen_: [N][N][4]int : max(int)
+seen := seen_
 
-parse :: proc(s: []u8) -> (start_pos, end_pos: gr.Pos) {
-    map_g = gr.allocate_grid_with_value(gr.Grid(N, N, 0, bool), true)
-    cost_g = gr.allocate_grid_with_value(gr.Grid(N, N, 0, [4]int), [4]int{BIG, BIG, BIG, BIG})
+
+find_start_and_end :: proc(s: []u8) -> (start_pos, end_pos: gr.Pos) {
     r, c: int
     for ch in s {
         switch ch {
@@ -47,8 +50,6 @@ parse :: proc(s: []u8) -> (start_pos, end_pos: gr.Pos) {
                 c = 0
                 continue
             }
-        case '#':
-            map_g.data[r][c] = false
         case 'S':
             start_pos = gr.Pos{r, c}
         case 'E':
@@ -56,15 +57,10 @@ parse :: proc(s: []u8) -> (start_pos, end_pos: gr.Pos) {
         }
         c += 1
     }
-
-    for i in 0 ..< N_BUCKETS {
-        buckets[i] = make_dynamic_array([dynamic]Node)
-    }
-
     return
 }
 
-move_pos :: proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
+move_pos :: #force_inline proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
     r, c := pos[0], pos[1]
     switch dir {
     case .N:
@@ -79,60 +75,75 @@ move_pos :: proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
     return {r, c}
 }
 
-is_valid_pos :: #force_inline proc "contextless" (pos: gr.Pos) -> bool {
-    return pos[0] < N && pos[1] < N && pos[0] >= 0 && pos[1] >= 0
-}
+// is_valid_pos :: #force_inline proc "contextless" (pos: gr.Pos) -> bool {
+//     return pos[0] < N && pos[1] < N && pos[0] >= 0 && pos[1] >= 0
+// }
+// rotate_dir_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
+//     switch dir {
+//     case .N:
+//         return .W
+//     case .W:
+//         return .S
+//     case .S:
+//         return .E
+//     case .E:
+//         return .N
+//     }
+//     return dir
+// }
 
-move_if_true :: proc "contextless" (node: Node) -> lib.Optional(Node) {
-    next_pos := move_pos(node.pos, node.dir)
-    if is_valid_pos(next_pos) && map_g.data[next_pos[0]][next_pos[1]] {
-        return {{next_pos, node.dir, node.cost + 1}, true}
+// rotate_dir_90 :: proc "contextless" (dir: Dir) -> Dir {
+//     switch dir {
+//     case .N:
+//         return .E
+//     case .W:
+//         return .N
+//     case .S:
+//         return .W
+//     case .E:
+//         return .S
+//     }
+//     return dir
+// }
+
+dfs :: proc(first_q: ^queue.Queue(Node), second_q: ^queue.Queue(Node), lowest: ^int, end_pos: gr.Pos) {
+    node, ok := queue.pop_front_safe(first_q)
+    // fmt.println(node)
+    if !ok {
+        return
     }
-    return {node, false}
-}
 
-rotate_dir_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
-    switch dir {
-    case .N:
-        return .W
-    case .W:
-        return .S
-    case .S:
-        return .E
-    case .E:
-        return .N
+    if node.cost >= lowest^ {
+        dfs(first_q, second_q, lowest, end_pos)
+        return
     }
-    return dir
-}
 
-rotate_dir_90 :: proc "contextless" (dir: Dir) -> Dir {
-    switch dir {
-    case .N:
-        return .E
-    case .W:
-        return .N
-    case .S:
-        return .W
-    case .E:
-        return .S
+    if node.pos == end_pos {
+        lowest^ = node.cost
+        dfs(first_q, second_q, lowest, end_pos)
+        return
     }
-    return dir
-}
 
-reverse_dir :: proc "contextless" (dir: Dir) -> Dir {
-    switch dir {
-    case .N:
-        return .S
-    case .W:
-        return .E
-    case .S:
-        return .N
-    case .E:
-        return .W
+    nodes := [3]Node {
+        {move_pos(node.pos, node.dir), node.dir, node.cost + 1},
+        {node.pos, Dir((int(node.dir) + 3) % 4), node.cost + 1000},
+        {node.pos, Dir((int(node.dir) + 1) % 4), node.cost + 1000},
     }
-    return dir
-}
 
+    for n in nodes {
+        if gr.unsafe_get_pos(grid, n.pos) != '#' && n.cost < seen[n.pos[0]][n.pos[1]][n.dir] {
+            seen[n.pos[0]][n.pos[1]][n.dir] = n.cost
+            if int(node.dir) == int(n.dir) {
+                queue.push_back(first_q, n)
+            } else {
+                queue.push_back(second_q, n)
+            }
+        }
+    }
+
+    dfs(first_q, second_q, lowest, end_pos)
+    return
+}
 
 solution := lib.Solution {
     day            = 16,
@@ -144,133 +155,48 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    start_pos, end_pos := parse(s)
-    append_elem(&buckets[0], Node{start_pos, .E, 0})
-    cost_g.data[start_pos[0]][start_pos[1]][Dir.E] = 0
+    start_pos, end_pos := find_start_and_end(s)
+    grid = gr.create_grid_from_bytes(N, N, 0, u8, s)
+    fmt.println(start_pos, end_pos, grid.rows, grid.cols)
 
-    idx, cost: int
-    bucket: Node
-    pos: gr.Pos
-    dir: Dir
-    cs: ^[4]int
-    options: [3]lib.Optional(Node)
-    for {
-        for len(buckets[idx % N_BUCKETS]) > 0 {
-            bucket = pop(&buckets[idx % N_BUCKETS])
-            if bucket.pos == end_pos {
-                result = u64(bucket.cost)
-                return
-            }
+    first_q: queue.Queue(Node)
+    queue.init(&first_q, capacity = NQ)
+    second_q: queue.Queue(Node)
+    queue.init(&second_q, capacity = NQ)
+    lowest := max(int)
 
-            options = {
-                move_if_true(bucket),
-                lib.Optional(Node){{bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost + 1000}, true},
-                lib.Optional(Node){{bucket.pos, rotate_dir_90(bucket.dir), bucket.cost + 1000}, true},
-            }
 
-            for option in options {
-                if option.ok {
-                    pos, dir, cost = option.value.pos, option.value.dir, option.value.cost
-                    cs = &cost_g.data[pos[0]][pos[1]]
-                    if cost < cs[dir] {
-                        cs[dir] = cost
-                        append_elem(&buckets[cost % N_BUCKETS], option.value)
-                    }
-                }
-            }
-        }
-        idx += 1
+    seen[start_pos[0]][start_pos[1]][Dir.E] = 0
+    queue.push_back(&first_q, Node{start_pos, .E, 0})
+    for queue.len(first_q) != 0 {
+        dfs(&first_q, &second_q, &lowest, end_pos)
+        first_q, second_q = second_q, first_q
     }
-    return
+
+    fmt.println(lowest)
+    return u64(lowest)
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    start_pos, end_pos := parse(s)
-    append_elem(&buckets[0], Node{start_pos, .E, 0})
-    cost_g.data[start_pos[0]][start_pos[1]][Dir.E] = 0
+    return EXPECTED_PART2
+}
 
-    idx, cost: int
-    bucket: Node
-    pos: gr.Pos
-    dir: Dir
-    cs: ^[4]int
-    options: [3]Node
-    lowest := lib.Optional(int){-1, false}
-    traversal: for {
-        for len(buckets[idx % N_BUCKETS]) > 0 {
-            bucket = pop(&buckets[idx % N_BUCKETS])
-            if bucket.pos == end_pos {
-                if lowest.ok {
-                    if bucket.cost > lowest.value {
-                        break traversal
-                    }
-                } else {
-                    lowest = {bucket.cost, true}
-                }
-            }
+/*
+   tests -----------------------------
+*/
 
-            options = {
-                {move_pos(bucket.pos, bucket.dir), bucket.dir, bucket.cost + 1},
-                {bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost + 1000},
-                {bucket.pos, rotate_dir_90(bucket.dir), bucket.cost + 1000},
-            }
+@(test)
+test_part1 :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
+    p1 := part1(INPUT)
+    expected: u64 = EXPECTED_PART1
+    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
+}
 
-            for option in options {
-                pos, dir, cost = option.pos, option.dir, option.cost
-                if is_valid_pos(pos) && map_g.data[pos[0]][pos[1]] {
-                    cs = &cost_g.data[pos[0]][pos[1]]
-                    if cost < cs[dir] {
-                        cs[dir] = cost
-                        append_elem(&buckets[cost % N_BUCKETS], option)
-                    }
-                }
-            }
-        }
-        idx += 1
-    }
-
-    visted := gr.create_grid(N, N, 0, bool)
-    gr.unsafe_set_pos(&visted, end_pos, true)
-    if lowest.ok {
-        queue := make_dynamic_array([dynamic]Node)
-        for direction in 0 ..= 3 {
-            if cost_g.data[end_pos[0]][end_pos[1]][direction] == lowest.value {
-                append_elem(&queue, Node{end_pos, Dir(direction), lowest.value})
-            }
-        }
-
-        for len(queue) > 0 {
-            bucket = pop(&queue)
-
-            if bucket.cost < 1 {
-                continue
-            }
-
-            options = {
-                {move_pos(bucket.pos, reverse_dir(bucket.dir)), bucket.dir, bucket.cost - 1},
-                {bucket.pos, rotate_dir_counter_90(bucket.dir), bucket.cost - 1000},
-                {bucket.pos, rotate_dir_90(bucket.dir), bucket.cost - 1000},
-            }
-
-            for option in options {
-                pos, dir, cost = option.pos, option.dir, option.cost
-                if is_valid_pos(pos) {
-                    cs = &cost_g.data[pos[0]][pos[1]]
-                    if cost == cs[dir] {
-                        visted.data[pos[0]][pos[1]] = true
-                        append_elem(&queue, option)
-                    }
-                }
-
-            }
-
-        }
-    }
-
-    for i in 0 ..< N {
-        for j in 0 ..< N {
-            if visted.data[i][j] do result += 1
-        }
-    }
-    return
+@(test)
+test_part2 :: proc(t: ^testing.T) {
+    context.allocator = context.temp_allocator
+    p2 := part2(INPUT)
+    expected: u64 = EXPECTED_PART2
+    testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
 }
