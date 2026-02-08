@@ -4,7 +4,7 @@ if [[ $1 == "release" ]]
 then
   shift
   echo "building 'release' executable -> ./main"
-  odin build . -show-timings -out=main -o:speed -vet -vet-cast -vet-style
+  odin build . -show-timings -out=main -o:aggressive -vet -vet-cast -vet-style
 else
   shift
   echo "building 'debug' executable -> ./main"
