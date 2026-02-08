@@ -4,6 +4,7 @@ import "../lib"
 import gr "../lib/grid"
 import "core:container/queue"
 import "core:fmt"
+import "core:mem"
 import "core:testing"
 
 EXAMPLE :: false
@@ -25,20 +26,17 @@ when EXAMPLE {
 Node :: struct {
     pos:  gr.Pos,
     dir:  Dir,
-    cost: int,
+    cost: u32,
 }
 
-Dir :: enum {
-    N = 0,
+Dir :: enum int {
+    N,
     W,
     S,
     E,
 }
 
 grid: gr.Grid(N, N, 0, u8)
-seen_: [N][N][4]int : max(int)
-seen := seen_
-
 
 find_start_and_end :: proc(s: []u8) -> (start_pos, end_pos: gr.Pos) {
     r, c: int
@@ -75,52 +73,26 @@ move_pos :: #force_inline proc "contextless" (pos: gr.Pos, dir: Dir) -> gr.Pos {
     return {r, c}
 }
 
-// is_valid_pos :: #force_inline proc "contextless" (pos: gr.Pos) -> bool {
-//     return pos[0] < N && pos[1] < N && pos[0] >= 0 && pos[1] >= 0
-// }
-// rotate_dir_counter_90 :: proc "contextless" (dir: Dir) -> Dir {
-//     switch dir {
-//     case .N:
-//         return .W
-//     case .W:
-//         return .S
-//     case .S:
-//         return .E
-//     case .E:
-//         return .N
-//     }
-//     return dir
-// }
-
-// rotate_dir_90 :: proc "contextless" (dir: Dir) -> Dir {
-//     switch dir {
-//     case .N:
-//         return .E
-//     case .W:
-//         return .N
-//     case .S:
-//         return .W
-//     case .E:
-//         return .S
-//     }
-//     return dir
-// }
-
-dfs :: proc(first_q: ^queue.Queue(Node), second_q: ^queue.Queue(Node), lowest: ^int, end_pos: gr.Pos) {
+dfs :: proc(
+    first_q: ^queue.Queue(Node),
+    second_q: ^queue.Queue(Node),
+    seen: ^[N][N][4]u32,
+    lowest: ^u32,
+    end_pos: gr.Pos,
+) {
     node, ok := queue.pop_front_safe(first_q)
-    // fmt.println(node)
     if !ok {
         return
     }
 
     if node.cost >= lowest^ {
-        dfs(first_q, second_q, lowest, end_pos)
+        dfs(first_q, second_q, seen, lowest, end_pos)
         return
     }
 
     if node.pos == end_pos {
         lowest^ = node.cost
-        dfs(first_q, second_q, lowest, end_pos)
+        dfs(first_q, second_q, seen, lowest, end_pos)
         return
     }
 
@@ -133,7 +105,7 @@ dfs :: proc(first_q: ^queue.Queue(Node), second_q: ^queue.Queue(Node), lowest: ^
     for n in nodes {
         if gr.unsafe_get_pos(grid, n.pos) != '#' && n.cost < seen[n.pos[0]][n.pos[1]][n.dir] {
             seen[n.pos[0]][n.pos[1]][n.dir] = n.cost
-            if int(node.dir) == int(n.dir) {
+            if node.dir == n.dir {
                 queue.push_back(first_q, n)
             } else {
                 queue.push_back(second_q, n)
@@ -141,7 +113,36 @@ dfs :: proc(first_q: ^queue.Queue(Node), second_q: ^queue.Queue(Node), lowest: ^
         }
     }
 
-    dfs(first_q, second_q, lowest, end_pos)
+    dfs(first_q, second_q, seen, lowest, end_pos)
+    return
+}
+
+rev_dfs :: proc(todo: ^queue.Queue(Node), best_paths: ^[N][N]bool, seen: ^[N][N][4]u32, start_pos: gr.Pos) {
+    node, ok := queue.pop_front_safe(todo)
+    if !ok {
+        return
+    }
+    best_paths[node.pos[0]][node.pos[1]] = true
+
+    if node.pos == start_pos {
+        rev_dfs(todo, best_paths, seen, start_pos)
+        return
+    }
+
+    nodes := [3]Node {
+        {move_pos(node.pos, Dir((int(node.dir) + 2) % 4)), node.dir, node.cost - 1},
+        {node.pos, Dir((int(node.dir) + 3) % 4), node.cost - 1000},
+        {node.pos, Dir((int(node.dir) + 1) % 4), node.cost - 1000},
+    }
+
+    for n in nodes {
+        if n.cost == seen[n.pos[0]][n.pos[1]][n.dir] {
+            queue.push_back(todo, n)
+            seen[n.pos[0]][n.pos[1]][n.dir] = max(u32)
+        }
+    }
+
+    rev_dfs(todo, best_paths, seen, start_pos)
     return
 }
 
@@ -162,13 +163,14 @@ part1 :: proc(s: []u8) -> (result: u64) {
     queue.init(&first_q, capacity = NQ)
     second_q: queue.Queue(Node)
     queue.init(&second_q, capacity = NQ)
-    lowest := max(int)
-
+    lowest := max(u32)
+    seen, _ := new([N][N][4]u32)
+    mem.set(seen, 0xFF, size_of(seen^))
 
     seen[start_pos[0]][start_pos[1]][Dir.E] = 0
     queue.push_back(&first_q, Node{start_pos, .E, 0})
     for queue.len(first_q) != 0 {
-        dfs(&first_q, &second_q, &lowest, end_pos)
+        dfs(&first_q, &second_q, seen, &lowest, end_pos)
         first_q, second_q = second_q, first_q
     }
 
@@ -176,7 +178,42 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    return EXPECTED_PART2
+    start_pos, end_pos := find_start_and_end(s)
+    grid = gr.create_grid_from_bytes(N, N, 0, u8, s)
+
+    first_q: queue.Queue(Node)
+    queue.init(&first_q, capacity = NQ)
+    second_q: queue.Queue(Node)
+    queue.init(&second_q, capacity = NQ)
+    lowest := max(u32)
+    seen, _ := new([N][N][4]u32)
+    mem.set(seen, 0xFF, size_of(seen^))
+
+    seen[start_pos[0]][start_pos[1]][Dir.E] = 0
+    queue.push_back(&first_q, Node{start_pos, .E, 0})
+    for queue.len(first_q) != 0 {
+        dfs(&first_q, &second_q, seen, &lowest, end_pos)
+        first_q, second_q = second_q, first_q
+    }
+
+    todo: queue.Queue(Node)
+    queue.init(&todo, capacity = NQ)
+    for dir in Dir {
+        if seen[end_pos[0]][end_pos[1]][dir] == lowest {
+            queue.push_back(&todo, Node{end_pos, dir, lowest})
+        }
+    }
+
+    best_paths: [N][N]bool
+    rev_dfs(&todo, &best_paths, seen, start_pos)
+
+    for row in best_paths {
+        for b in row {
+            if b do result += 1
+        }
+    }
+
+    return
 }
 
 /*
