@@ -111,6 +111,13 @@ unwrap_or :: proc(o: Optional($T), default: T) -> T {
     return o.ok ? o.value : default
 }
 
+from_digits :: proc(digits: []u64) -> (result: u64) {
+    for d in digits {
+        result = result * 10 + d
+    }
+    return
+}
+
 /*
    tests -----------------------------
 */
