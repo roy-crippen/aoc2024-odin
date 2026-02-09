@@ -7,17 +7,17 @@ import "core:testing"
 EXAMPLE :: false
 when EXAMPLE {
     A :: 729
-    LEN :: 6
     PROGRAM :: [LEN]u64{0, 1, 5, 4, 3, 0}
+    LEN :: 6
     INPUT :: #load("example.txt", []u8)
     EXPECTED_PART1 :: 4635635210
     EXPECTED_PART2 :: 42
 } else {
     A :: 59397658
-    // A :: 59590048
-    LEN :: 16
     PROGRAM :: [LEN]u64{2, 4, 1, 1, 7, 5, 4, 6, 1, 4, 0, 3, 5, 5, 3, 0}
+    // A :: 59590048
     // PROGRAM :: [LEN]u64{2, 4, 1, 5, 7, 5, 0, 3, 1, 6, 4, 3, 5, 5, 3, 0}
+    LEN :: 16
     INPUT :: #load("day_17.txt", []u8)
     EXPECTED_PART1 :: 461421316
     EXPECTED_PART2 :: 202366627359274
@@ -68,6 +68,37 @@ run :: proc(a, b, c: ^u64) -> (out: [dynamic]u64) {
     return
 }
 
+update_factors :: proc(factors: ^[LEN]u64, output: []u64) {
+    program := PROGRAM
+    i, i_: u64
+    i = LEN
+
+    for i > 0 {
+        i_ = i - 1
+        if u64(len(output)) < i_ || output[i_] != program[i_] {
+            factors[i - 1] += 1
+            break
+        }
+        i -= 1
+    }
+    return
+}
+
+get_initial_a :: proc(factors: [LEN]u64) -> (a: u64) {
+    for i := 0; i < LEN; i += 1 {
+        a += lib.pow_8[i] * factors[i]
+    }
+    return
+}
+
+is_program :: #force_inline proc(xs: [dynamic]u64, ys: [LEN]u64) -> bool {
+    if len(xs) != LEN do return false
+    for i in 0 ..< LEN {
+        if xs[i] != ys[i] do return false
+    }
+    return true
+}
+
 solution := lib.Solution {
     day            = 17,
     input          = INPUT,
@@ -85,7 +116,20 @@ part1 :: proc(s: []u8) -> (result: u64) {
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
-    result = EXPECTED_PART2
+    program := PROGRAM
+    factors: [LEN]u64
+    a, a_keep, b, c: u64
+    for {
+        a = get_initial_a(factors)
+        a_keep, b, c = a, 0, 0
+        output := run(&a, &b, &c)
+        if is_program(output, program) {
+            result = a_keep
+            break
+        }
+        update_factors(&factors, output[:])
+    }
+
     return
 }
 
