@@ -106,15 +106,18 @@ create_grid_from_slice :: proc "contextless" ($R, $C, $P: int, $T: typeid, s: []
 // accessors
 // ────────────────────────────────────────────────
 
-get :: proc "contextless" (g: Grid($R, $C, $P, $T), r, c: int) -> (value: T, ok: bool) {
-    if r < 0 || r >= g.rows || c < 0 || c >= g.cols {
-        return {}, false
-    }
-    value = g.data[r][c]
-    return value, true
+is_in_bounds :: #force_inline proc "contextless" (rows, cols, r, c: int) -> bool {
+    return r >= 0 && r < rows && c >= 0 && c < cols
 }
 
-get_pos :: proc "contextless" (g: Grid($R, $C, $P, $T), pos: Pos) -> (value: T, ok: bool) {
+get :: proc "contextless" (g: Grid($R, $C, $P, $T), r, c: int) -> (T, bool) {
+    if r >= 0 && r < g.rows && c >= 0 && c < g.cols {
+        return g.data[r][c], true
+    }
+    return {}, false
+}
+
+get_pos :: #force_inline proc "contextless" (g: Grid($R, $C, $P, $T), pos: Pos) -> (value: T, ok: bool) {
     return get(g, pos[0], pos[1])
 }
 
