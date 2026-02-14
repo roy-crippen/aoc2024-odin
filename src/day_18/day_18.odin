@@ -1,20 +1,69 @@
 package day_18
 
 import "../lib"
+import gr "../lib/grid"
+import "core:container/queue"
 import "core:fmt"
 import "core:testing"
 
-EXAMPLE :: false
-when EXAMPLE {
-    INPUT :: #load("example.txt", []u8)
-    EXPECTED_PART1 :: 22
-    EXPECTED_PART2 :: 6
-} else {
-    INPUT :: #load("day_18.txt", []u8)
-    EXPECTED_PART1 :: 276
-    EXPECTED_PART2 :: 2220
+N :: 71
+SAFE_N :: 1024
+BIG :: 1000 * 1000
+INPUT :: #load("day_18.txt", []u8)
+EXPECTED_PART1 :: 276
+EXPECTED_PART2 :: 2220
+
+Cell :: struct {
+    row, col, dist: int,
+    blocked:        bool,
 }
 
+grid: gr.Grid(N, N, 0, Cell)
+q: queue.Queue(Cell)
+
+parse :: proc(s: []u8) {
+    grid = gr.create_grid(N, N, 0, Cell)
+    for line, row in grid.data {
+        for col in 0 ..< len(line) {
+            grid.data[row][col] = {row, col, BIG, false}
+        }
+    }
+
+    i, j, k, row, col: int
+    for _ in 0 ..< SAFE_N {
+        for j = i; s[j] != ','; j += 1 {  }
+        col = lib.unsafe_slice_u8_to_int(s[i:j])
+        for k = j + 1; s[k] != '\n'; k += 1 {  }
+        row = lib.unsafe_slice_u8_to_int(s[j + 1:k])
+        grid.data[row][col].blocked = true
+        i = k + 1
+    }
+}
+
+walk :: proc() {
+    grid.data[0][0].dist = 0
+    queue.init(&q, capacity = 80)
+    queue.push_back(&q, grid.data[0][0])
+
+    neighbor_cell, cc: Cell
+    ns: [4][2]int
+    ok: bool
+    row, col, dist: int
+    max_len_q: int
+    for queue.len(q) > 0 {
+        max_len_q = max(max_len_q, queue.len(q))
+        cc = queue.pop_front(&q)
+        row, col, dist = cc.row, cc.col, cc.dist + 1
+        ns = {{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}}
+        for rc in ns {
+            neighbor_cell, ok = gr.get_pos(grid, rc)
+            if !ok || neighbor_cell.blocked || neighbor_cell.dist <= dist do continue
+            grid.data[rc[0]][rc[1]].dist = dist
+            queue.push_back(&q, grid.data[rc[0]][rc[1]])
+        }
+    }
+    fmt.println(max_len_q)
+}
 
 solution := lib.Solution {
     day            = 18,
@@ -26,8 +75,9 @@ solution := lib.Solution {
 }
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    result = EXPECTED_PART1
-    return
+    parse(s)
+    walk()
+    return u64(grid.data[N - 1][N - 1].dist)
 }
 
 part2 :: proc(s: []u8) -> (result: u64) {
