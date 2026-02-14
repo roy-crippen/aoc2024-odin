@@ -49,20 +49,18 @@ walk :: proc() {
     ns: [4][2]int
     ok: bool
     row, col, dist: int
-    max_len_q: int
     for queue.len(q) > 0 {
-        max_len_q = max(max_len_q, queue.len(q))
         cc = queue.pop_front(&q)
         row, col, dist = cc.row, cc.col, cc.dist + 1
         ns = {{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}}
         for rc in ns {
             neighbor_cell, ok = gr.get_pos(grid, rc)
-            if !ok || neighbor_cell.blocked || neighbor_cell.dist <= dist do continue
-            grid.data[rc[0]][rc[1]].dist = dist
-            queue.push_back(&q, grid.data[rc[0]][rc[1]])
+            if ok && neighbor_cell.dist > dist && !neighbor_cell.blocked {
+                grid.data[rc[0]][rc[1]].dist = dist
+                queue.push_back(&q, grid.data[rc[0]][rc[1]])
+            }
         }
     }
-    fmt.println(max_len_q)
 }
 
 solution := lib.Solution {
