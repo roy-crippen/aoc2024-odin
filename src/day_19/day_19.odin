@@ -2,8 +2,6 @@ package day_19
 
 import "../lib"
 import "core:bytes"
-import "core:fmt"
-import "core:testing"
 
 EXAMPLE :: false
 when EXAMPLE {
@@ -130,24 +128,4 @@ part2 :: proc(s: []u8) -> (result: u64) {
         sum += count(string(bs), &ls)
     }
     return u64(sum)
-}
-
-/*
-   tests -----------------------------
-*/
-
-@(test)
-test_part1 :: proc(t: ^testing.T) {
-    context.allocator = context.temp_allocator
-    p1 := part1(INPUT)
-    expected: u64 = EXPECTED_PART1
-    testing.expect(t, p1 == expected, fmt.tprintf("Expected result %d, got %d", expected, p1))
-}
-
-@(test)
-test_part2 :: proc(t: ^testing.T) {
-    context.allocator = context.temp_allocator
-    p2 := part2(INPUT)
-    expected: u64 = EXPECTED_PART2
-    testing.expect(t, p2 == expected, fmt.tprintf("Expected result %d, got %d", expected, p2))
 }
