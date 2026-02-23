@@ -125,13 +125,6 @@ search_range :: proc(ctx: ^Ctx, shard, scnt: int, lim: v_type) -> (tot: int) {
     return
 }
 
-run :: proc(ctx: ^Ctx, lim: v_type) -> (total: int) {
-    for i in 0 ..< 12 {
-        total += search_range(ctx, i, 12, lim)
-    }
-    return
-}
-
 Search_Range_Task :: struct {
     ctx: ^Ctx,
     i:   int,
@@ -144,12 +137,10 @@ worker :: proc(task: thread.Task) {
     sync.atomic_add(&acc, res)
 }
 
-
 run_threaded :: proc(ctx: ^Ctx, lim: v_type) -> int {
     pool: thread.Pool
     thread.pool_init(&pool, context.allocator, os.processor_core_count() - 1)
     thread.pool_start(&pool)
-    // defer thread.pool_destroy(&pool) // waits for tasks + cleans up pool
 
     sync.atomic_store(&acc, 0)
 
@@ -163,14 +154,14 @@ run_threaded :: proc(ctx: ^Ctx, lim: v_type) -> int {
             &pool,
             allocator = context.allocator,
             procedure = worker,
-            data = &task, // pointer to stack-allocated task → safe until pool_finish
-            user_index = task.i, // optional, but can be useful for logging/debug
+            data = &task, // pointer to stack-allocated task → thread safe
+            user_index = task.i, // useful for logging/debug
         )
     }
 
-    thread.pool_finish(&pool) // wait for all tasks (optional with defer destroy, but explicit is clearer)
+    thread.pool_finish(&pool)
 
-    return acc // caller can read it, or use atomic_load(&acc) if paranoid
+    return acc
 }
 
 
@@ -178,12 +169,6 @@ part1 :: proc(s: []u8) -> (result: u64) {
     ctx := parse(s)
     _ = bfs(&ctx, ctx.start, ctx.end, &ctx.work1) - 1
     ctx.best = bfs(&ctx, ctx.end, ctx.start, &ctx.work2) - 1
-
-
-    // result = u64(run(&ctx, 2))
-    // fmt.println("result = ", result)
-
-    // run_threaded(&ctx, 2)
     return u64(run_threaded(&ctx, 2))
 }
 
@@ -191,9 +176,6 @@ part2 :: proc(s: []u8) -> (result: u64) {
     ctx := parse(s)
     _ = bfs(&ctx, ctx.start, ctx.end, &ctx.work1) - 1
     ctx.best = bfs(&ctx, ctx.end, ctx.start, &ctx.work2) - 1
-
-    // result = u64(run(&ctx, 20))
-    // return
     return u64(run_threaded(&ctx, 20))
 }
 
