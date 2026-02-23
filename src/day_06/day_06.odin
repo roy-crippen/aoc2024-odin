@@ -191,7 +191,7 @@ part2 :: proc(s: []u8) -> (result: u64) {
     task_len := len(route) - 1
 
     pool: thread.Pool
-    thread.pool_init(&pool, context.allocator, os.processor_core_count() / 2)
+    thread.pool_init(&pool, context.allocator, os.processor_core_count() - 1)
     thread.pool_start(&pool)
 
     tasks := make_slice([]Loop_Task, task_len)
