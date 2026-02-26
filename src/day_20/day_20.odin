@@ -3,7 +3,6 @@ package day_20
 import "../lib"
 import "core:fmt"
 import "core:math"
-import "core:os"
 import "core:sync"
 import "core:testing"
 import "core:thread"
@@ -33,6 +32,7 @@ solution := lib.Solution {
 }
 
 v_type :: i16
+scnt :: 10 // threads
 acc: int
 
 Ctx :: struct {
@@ -135,19 +135,19 @@ Search_Range_Task :: struct {
 
 worker :: proc(task: thread.Task) {
     data := cast(^Search_Range_Task)task.data
-    res := search_range(data.ctx, data.i, 12, data.lim)
+    res := search_range(data.ctx, data.i, scnt, data.lim)
     sync.atomic_add(&acc, res)
 }
 
 run_threaded :: proc(ctx: ^Ctx, lim: v_type) -> int {
     pool: thread.Pool
-    thread.pool_init(&pool, context.allocator, os.processor_core_count() - 1)
+    thread.pool_init(&pool, context.allocator, scnt)
     thread.pool_start(&pool)
 
     sync.atomic_store(&acc, 0)
 
-    tasks: [12]Search_Range_Task
-    for i in 0 ..< 12 {
+    tasks: [scnt]Search_Range_Task
+    for i in 0 ..< scnt {
         tasks[i] = Search_Range_Task{ctx, i, lim}
     }
 
@@ -168,6 +168,7 @@ run_threaded :: proc(ctx: ^Ctx, lim: v_type) -> int {
 
 
 part1 :: proc(s: []u8) -> (result: u64) {
+    fmt.println(scnt)
     ctx := parse(s)
     _ = bfs(&ctx, ctx.start, ctx.end, &ctx.work1) - 1
     ctx.best = bfs(&ctx, ctx.end, ctx.start, &ctx.work2) - 1

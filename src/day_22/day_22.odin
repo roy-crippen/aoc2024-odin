@@ -8,7 +8,7 @@ EXAMPLE :: false
 when EXAMPLE {
     INPUT :: #load("example.txt", []u8)
     EXPECTED_PART1 :: 37327623
-    EXPECTED_PART2 :: 42
+    EXPECTED_PART2 :: 24
 } else {
     INPUT :: #load("day_22.txt", []u8)
     EXPECTED_PART1 :: 21147129593
