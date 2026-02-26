@@ -32,7 +32,7 @@ solution := lib.Solution {
 }
 
 v_type :: i16
-scnt :: 10 // threads
+scnt :: 12 // threads
 acc: int
 
 Ctx :: struct {
@@ -168,7 +168,6 @@ run_threaded :: proc(ctx: ^Ctx, lim: v_type) -> int {
 
 
 part1 :: proc(s: []u8) -> (result: u64) {
-    fmt.println(scnt)
     ctx := parse(s)
     _ = bfs(&ctx, ctx.start, ctx.end, &ctx.work1) - 1
     ctx.best = bfs(&ctx, ctx.end, ctx.start, &ctx.work2) - 1
