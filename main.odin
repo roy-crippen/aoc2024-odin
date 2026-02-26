@@ -25,6 +25,7 @@ import "src/day_18"
 import "src/day_19"
 import "src/day_20"
 import "src/day_21"
+import "src/day_22"
 import "src/lib"
 
 ARENA_SIZE :: 2 * 1024 * 1024 // 2 MiB
