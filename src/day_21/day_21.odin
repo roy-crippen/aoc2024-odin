@@ -55,8 +55,7 @@ expand1 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '>':
             sa.push_back(&res, ">A")
         case 'A':
-            sa.push_back(&res, ">^A")
-            sa.push_back(&res, "^>A")
+            sa.push_back_elems(&res, ">^A", "^>A")
         case:
             sa.push_back(&res, "A")
         }
@@ -70,8 +69,7 @@ expand1 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case 'A':
             sa.push_back(&res, "^A")
         case '^':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case:
             sa.push_back(&res, "A")
         }
@@ -85,8 +83,7 @@ expand1 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case 'A':
             sa.push_back(&res, ">A")
         case '>':
-            sa.push_back(&res, ">vA")
-            sa.push_back(&res, "v>A")
+            sa.push_back_elems(&res, ">vA", "v>A")
         case:
             sa.push_back(&res, "A")
         }
@@ -98,8 +95,7 @@ expand1 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '>':
             sa.push_back(&res, "vA")
         case 'v':
-            sa.push_back(&res, "<vA")
-            sa.push_back(&res, "v<A")
+            sa.push_back_elems(&res, "<vA", "v<A")
         case '<':
             sa.push_back(&res, "v<<A")
         case:
@@ -124,22 +120,19 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '8':
             sa.push_back(&res, "^^^A")
         case '9':
-            sa.push_back(&res, "^^^>A")
-            sa.push_back(&res, ">^^^A")
+            sa.push_back_elems(&res, "^^^>A", ">^^^A")
         case '4':
             sa.push_back(&res, "^^<A")
         case '5':
             sa.push_back(&res, "^^A")
         case '6':
-            sa.push_back(&res, "^^>A")
-            sa.push_back(&res, ">^^A")
+            sa.push_back_elems(&res, "^^>A", ">^^A")
         case '1':
             sa.push_back(&res, "^<A")
         case '2':
             sa.push_back(&res, "^A")
         case '3':
-            sa.push_back(&res, "^>A")
-            sa.push_back(&res, ">^A")
+            sa.push_back_elems(&res, "^>A", ">^A")
         case '0':
             sa.push_back(&res, "A")
         case 'A':
@@ -151,19 +144,15 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '7':
             sa.push_back(&res, "^^A")
         case '8':
-            sa.push_back(&res, "^^>A")
-            sa.push_back(&res, ">^^A")
+            sa.push_back_elems(&res, "^^>A", ">^^A")
         case '9':
-            sa.push_back(&res, "^^>>A")
-            sa.push_back(&res, ">>^^A")
+            sa.push_back_elems(&res, "^^>>A", ">>^^A")
         case '4':
             sa.push_back(&res, "^A")
         case '5':
-            sa.push_back(&res, "^>A")
-            sa.push_back(&res, ">^A")
+            sa.push_back_elems(&res, "^>A", ">^A")
         case '6':
-            sa.push_back(&res, "^>>A")
-            sa.push_back(&res, ">>^A")
+            sa.push_back_elems(&res, "^>>A", ">>^A")
         case '1':
             sa.push_back(&res, "A")
         case '2':
@@ -179,21 +168,17 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
     case '2':
         switch to {
         case '7':
-            sa.push_back(&res, "^^<A")
-            sa.push_back(&res, "<^^A")
+            sa.push_back_elems(&res, "^^<A", "<^^A")
         case '8':
             sa.push_back(&res, "^^A")
         case '9':
-            sa.push_back(&res, "^^>A")
-            sa.push_back(&res, ">^^A")
+            sa.push_back_elems(&res, "^^>A", ">^^A")
         case '4':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case '5':
             sa.push_back(&res, "^A")
         case '6':
-            sa.push_back(&res, "^>A")
-            sa.push_back(&res, ">^A")
+            sa.push_back_elems(&res, "^>A", ">^A")
         case '1':
             sa.push_back(&res, "<A")
         case '2':
@@ -203,26 +188,21 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '0':
             sa.push_back(&res, "vA")
         case 'A':
-            sa.push_back(&res, ">vA")
-            sa.push_back(&res, "v>A")
+            sa.push_back_elems(&res, ">vA", "v>A")
         }
 
     case '3':
         switch to {
         case '7':
-            sa.push_back(&res, "^^<<A")
-            sa.push_back(&res, "<<^^A")
+            sa.push_back_elems(&res, "^^<<A", "<<^^A")
         case '8':
-            sa.push_back(&res, "^^<A")
-            sa.push_back(&res, "<^^A")
+            sa.push_back_elems(&res, "^^<A", "<^^A")
         case '9':
             sa.push_back(&res, "^^A")
         case '4':
-            sa.push_back(&res, "^<<A")
-            sa.push_back(&res, "<<^A")
+            sa.push_back_elems(&res, "^<<A", "<<^A")
         case '5':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case '6':
             sa.push_back(&res, "^A")
         case '1':
@@ -232,8 +212,7 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '3':
             sa.push_back(&res, "A")
         case '0':
-            sa.push_back(&res, "<vA")
-            sa.push_back(&res, "v<A")
+            sa.push_back_elems(&res, "<vA", "v<A")
         case 'A':
             sa.push_back(&res, "vA")
         }
@@ -243,11 +222,9 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '7':
             sa.push_back(&res, "^A")
         case '8':
-            sa.push_back(&res, "^>A")
-            sa.push_back(&res, ">^A")
+            sa.push_back_elems(&res, "^>A", ">^A")
         case '9':
-            sa.push_back(&res, ">>^A")
-            sa.push_back(&res, "^>>A")
+            sa.push_back_elems(&res, ">>^A", "^>>A")
         case '4':
             sa.push_back(&res, "A")
         case '5':
@@ -257,11 +234,9 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '1':
             sa.push_back(&res, "vA")
         case '2':
-            sa.push_back(&res, "v>A")
-            sa.push_back(&res, ">vA")
+            sa.push_back_elems(&res, "v>A", ">vA")
         case '3':
-            sa.push_back(&res, ">>vA")
-            sa.push_back(&res, "v>>A")
+            sa.push_back_elems(&res, ">>vA", "v>>A")
         case '0':
             sa.push_back(&res, ">vvA")
         case 'A':
@@ -271,13 +246,11 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
     case '5':
         switch to {
         case '7':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case '8':
             sa.push_back(&res, "^A")
         case '9':
-            sa.push_back(&res, "^>A")
-            sa.push_back(&res, ">^A")
+            sa.push_back_elems(&res, "^>A", ">^A")
         case '4':
             sa.push_back(&res, "<A")
         case '5':
@@ -285,28 +258,23 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '6':
             sa.push_back(&res, ">A")
         case '1':
-            sa.push_back(&res, "v<A")
-            sa.push_back(&res, "<vA")
+            sa.push_back_elems(&res, "v<A", "<vA")
         case '2':
             sa.push_back(&res, "vA")
         case '3':
-            sa.push_back(&res, "v>A")
-            sa.push_back(&res, ">vA")
+            sa.push_back_elems(&res, "v>A", ">vA")
         case '0':
             sa.push_back(&res, "vvA")
         case 'A':
-            sa.push_back(&res, ">vvA")
-            sa.push_back(&res, "vv>A")
+            sa.push_back_elems(&res, ">vvA", "vv>A")
         }
 
     case '6':
         switch to {
         case '7':
-            sa.push_back(&res, "<<^A")
-            sa.push_back(&res, "^<<A")
+            sa.push_back_elems(&res, "<<^A", "^<<A")
         case '8':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case '9':
             sa.push_back(&res, "^A")
         case '4':
@@ -316,16 +284,13 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '6':
             sa.push_back(&res, "A")
         case '1':
-            sa.push_back(&res, "<<vA")
-            sa.push_back(&res, "v<<A")
+            sa.push_back_elems(&res, "<<vA", "v<<A")
         case '2':
-            sa.push_back(&res, "v<A")
-            sa.push_back(&res, "<vA")
+            sa.push_back_elems(&res, "v<A", "<vA")
         case '3':
             sa.push_back(&res, "vA")
         case '0':
-            sa.push_back(&res, "<vvA")
-            sa.push_back(&res, "vv<A")
+            sa.push_back_elems(&res, "<vvA", "vv<A")
         case 'A':
             sa.push_back(&res, "vvA")
         }
@@ -341,19 +306,15 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '4':
             sa.push_back(&res, "vA")
         case '5':
-            sa.push_back(&res, ">vA")
-            sa.push_back(&res, "v>A")
+            sa.push_back_elems(&res, ">vA", "v>A")
         case '6':
-            sa.push_back(&res, ">>vA")
-            sa.push_back(&res, "v>>A")
+            sa.push_back_elems(&res, ">>vA", "v>>A")
         case '1':
             sa.push_back(&res, "vvA")
         case '2':
-            sa.push_back(&res, ">vvA")
-            sa.push_back(&res, "vv>A")
+            sa.push_back_elems(&res, ">vvA", "vv>A")
         case '3':
-            sa.push_back(&res, ">>vvA")
-            sa.push_back(&res, "vv>>A")
+            sa.push_back_elems(&res, ">>vvA", "vv>>A")
         case '0':
             sa.push_back(&res, ">vvvA")
         case 'A':
@@ -369,26 +330,21 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '9':
             sa.push_back(&res, ">A")
         case '4':
-            sa.push_back(&res, "v<A")
-            sa.push_back(&res, "<vA")
+            sa.push_back_elems(&res, "v<A", "<vA")
         case '5':
             sa.push_back(&res, "vA")
         case '6':
-            sa.push_back(&res, "v>A")
-            sa.push_back(&res, ">vA")
+            sa.push_back_elems(&res, "v>A", ">vA")
         case '1':
-            sa.push_back(&res, "vv<A")
-            sa.push_back(&res, "<vvA")
+            sa.push_back_elems(&res, "vv<A", "<vvA")
         case '2':
             sa.push_back(&res, "vvA")
         case '3':
-            sa.push_back(&res, "vv>A")
-            sa.push_back(&res, ">vvA")
+            sa.push_back_elems(&res, "vv>A", ">vvA")
         case '0':
             sa.push_back(&res, "vvvA")
         case 'A':
-            sa.push_back(&res, ">vvvA")
-            sa.push_back(&res, "vvv>A")
+            sa.push_back_elems(&res, ">vvvA", "vvv>A")
         }
 
     case '9':
@@ -400,24 +356,19 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '9':
             sa.push_back(&res, "A")
         case '4':
-            sa.push_back(&res, "<<vA")
-            sa.push_back(&res, "v<<A")
+            sa.push_back_elems(&res, "<<vA", "v<<A")
         case '5':
-            sa.push_back(&res, "<vA")
-            sa.push_back(&res, "v<A")
+            sa.push_back_elems(&res, "<vA", "v<A")
         case '6':
             sa.push_back(&res, "vA")
         case '1':
-            sa.push_back(&res, "<<vvA")
-            sa.push_back(&res, "vv<<A")
+            sa.push_back_elems(&res, "<<vvA", "vv<<A")
         case '2':
-            sa.push_back(&res, "<vvA")
-            sa.push_back(&res, "vv<A")
+            sa.push_back_elems(&res, "<vvA", "vv<A")
         case '3':
             sa.push_back(&res, "vvA")
         case '0':
-            sa.push_back(&res, "<vvvA")
-            sa.push_back(&res, "vvv<A")
+            sa.push_back_elems(&res, "<vvvA", "vvv<A")
         case 'A':
             sa.push_back(&res, "vvvA")
         }
@@ -427,22 +378,19 @@ expand2 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
         case '7':
             sa.push_back(&res, "^^^<<A")
         case '8':
-            sa.push_back(&res, "^^^<A")
-            sa.push_back(&res, "<^^^A")
+            sa.push_back_elems(&res, "^^^<A", "<^^^A")
         case '9':
             sa.push_back(&res, "^^^A")
         case '4':
             sa.push_back(&res, "^^<<A")
         case '5':
-            sa.push_back(&res, "^^<A")
-            sa.push_back(&res, "<^^A")
+            sa.push_back_elems(&res, "^^<A", "<^^A")
         case '6':
             sa.push_back(&res, "^^A")
         case '1':
             sa.push_back(&res, "^<<A")
         case '2':
-            sa.push_back(&res, "^<A")
-            sa.push_back(&res, "<^A")
+            sa.push_back_elems(&res, "^<A", "<^A")
         case '3':
             sa.push_back(&res, "^A")
         case '0':
