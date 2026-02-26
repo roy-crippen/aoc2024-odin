@@ -8,6 +8,8 @@ import "core:sync"
 import "core:testing"
 import "core:thread"
 
+// port of: https://github.com/p88h/aoc2024/blob/main/src/day22.zig
+
 EXAMPLE :: false
 when EXAMPLE {
     N :: 15
