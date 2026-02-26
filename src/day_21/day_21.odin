@@ -28,7 +28,6 @@ solution := lib.Solution {
     expected_part2 = EXPECTED_PART2,
 }
 
-
 expand1 :: #force_inline proc(from, to: u8) -> sa.Small_Array(2, string) {
     res: sa.Small_Array(2, string)
 
