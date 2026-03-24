@@ -27,7 +27,7 @@ solution := lib.Solution {
     expected_part2 = EXPECTED_PART2,
 }
 
-scnt :: 10 // threads
+scnt :: 24 // threads
 pcnt :: 19 * 19 * 19 * 19
 pcnt_pad :: ((pcnt + 63) / 64) * 64
 beam :: 4

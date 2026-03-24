@@ -32,7 +32,7 @@ solution := lib.Solution {
 }
 
 v_type :: i16
-scnt :: 12 // threads
+scnt :: 24 // threads
 acc: int
 
 Ctx :: struct {
