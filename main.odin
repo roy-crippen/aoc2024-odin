@@ -26,6 +26,7 @@ import "src/day_19"
 import "src/day_20"
 import "src/day_21"
 import "src/day_22"
+import "src/day_23"
 import "src/lib"
 
 ARENA_SIZE :: 8 * 1024 * 1024 // 4 MiB
@@ -70,6 +71,7 @@ main :: proc() {
         day_20.solution,
         day_21.solution,
         day_22.solution,
+        day_23.solution,
     }
 
     tot_time: f64
