@@ -180,6 +180,7 @@ part2 :: proc(s: []u8) -> (result: u64) {
         states: [2]State,
     }
 
+    loop_counter = 0
     worker :: proc(task: thread.Task) {
         data := cast(^Loop_Task)task.data
         sync.atomic_add(&loop_counter, is_loop(data.grid^, data.states))
